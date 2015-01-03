@@ -49,7 +49,7 @@ unsigned long ioread32(unsigned long * addr) {
 void sidDelay() {
     struct timespec tim, tim2;
     tim.tv_sec = 0;
-    tim.tv_nsec = 5000000;
+    tim.tv_nsec = 1000; // 1000 nanoseconds; 1 microsecond; cycle time of 1 Mhz
     nanosleep(&tim, &tim2);
 }
 
