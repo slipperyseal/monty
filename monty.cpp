@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 
 #include "monty.h"
 
@@ -19,7 +20,7 @@
 // todo: current implementation does not activate 1mhz clock. i'm still working on that.
 // todo: parametize midi device "/dev/snd/midiC1D0"
 //
-// gcc monty.cpp -o monty -lm
+// gcc monty.cpp -o monty -lm -O3
 // sudo ./monty
 
 // Define the shift up for the 3 bits per pin in each GPFSEL port
@@ -38,18 +39,18 @@ struct bcm2835_peripheral gpioPlease = {GPIO_BASE};
 Synth synth;
 
 void iowrite32(unsigned long value, unsigned long * addr) {
-    addr[0] = value;
+    ((volatile unsigned long *)addr)[0] = value;
 }
 
 unsigned long ioread32(unsigned long * addr) {
-    return addr[0];
+    return ((volatile unsigned long *)addr)[0];
 }
 
-int delayValue = 0;
 void sidDelay() {
-    for (int x=0;x<2000;x++) {
-        delayValue++; // do something that wont be optimized away
-    }
+    struct timespec tim, tim2;
+    tim.tv_sec = 0;
+    tim.tv_nsec = 5000000;
+    nanosleep(&tim, &tim2);
 }
 
 void writeSid(int reg, int val) {
@@ -81,40 +82,23 @@ void startSidClock(int freq) {
     iowrite32(0x00000F9, (unsigned long *) gpio_timer + TIMER_PRE_DIV);
 }
 
-int gpioToGPFSEL(int x) {
-    return x/10;
+void setPinOutput(int pin, int mode) {
+    int fSel = pin/10;
+    int shift = gpioToShift[pin];
+    iowrite32(ioread32((unsigned long *) gpio + fSel) & ~(7 << shift) | (mode << shift), (unsigned long *) gpio + fSel);
 }
 
 void setPinsToOutput(void) {
-    int i, fSel, shift;
-
-    for (i = 0; i < 8; i++) {
-        fSel = gpioToGPFSEL(DATA[i]);
-        shift = gpioToShift[DATA[i]];
-        iowrite32(ioread32((unsigned long *) gpio + fSel) & ~(7 << shift)  | (1 << shift), (unsigned long *) gpio + fSel);
+    for (int i = 0; i < 8; i++) {
+        setPinOutput(DATA[i], 1);
     }
-
-    for (i = 0; i < 5; i++) {
-        fSel = gpioToGPFSEL(ADDR[i]);
-        shift = gpioToShift[ADDR[i]];
-        iowrite32(ioread32((unsigned long *) gpio + fSel) & ~(7 << shift)  | (1 << shift), (unsigned long *) gpio + fSel);
+    for (int i = 0; i < 5; i++) {
+        setPinOutput(ADDR[i], 1);
     }
-
-    fSel = gpioToGPFSEL(CS);
-    shift = gpioToShift[CS];
-    iowrite32(ioread32((unsigned long *) gpio + fSel) & ~(7 << shift) | (1 << shift), (unsigned long *) gpio + fSel);
-
-    fSel = gpioToGPFSEL(RW);
-    shift = gpioToShift[RW];
-    iowrite32(ioread32((unsigned long *) gpio + fSel) & ~(7 << shift) | (1 << shift), (unsigned long *) gpio + fSel);
-
-    fSel = gpioToGPFSEL(RES);
-    shift = gpioToShift[RES];
-    iowrite32(ioread32((unsigned long *) gpio + fSel) & ~(7 << shift) | (1 << shift), (unsigned long *) gpio + fSel);
-
-    fSel = gpioToGPFSEL(CLK);
-    shift = gpioToShift[CLK];
-    iowrite32(ioread32((unsigned long *) gpio + fSel) & ~(7 << shift) | (4 << shift), (unsigned long *) gpio + fSel);
+    setPinOutput(CS, 1);
+    setPinOutput(RW, 1);
+    setPinOutput(RES, 1);
+    setPinOutput(CLK, 4);
 }
 
 void sidReset() {
@@ -251,9 +235,9 @@ void Voice::setNoteOn(int key, int velocity) {
 }
 
 int getSidFrequency(float key) {
-    float freq = 8.1758 * powf(2,((key < 0 ? 0 : key > 127 ? 127 : key)/12.0));
-    float sid = (16777216.0 / 985248.0) * freq; // 1022727 for 6567R8 VIC 6567R56A
-    return (int)(sid > 0xffff ? 0 : sid);
+    float freq = 8.1758 * powf(2,((key < 0 ? 0 : key)/12.0));
+    int sid = (int)(16777216.0 / 985248.0) * freq; // 1022727 for 6567R8 VIC 6567R56A
+    return sid > 0xffff ? 0 : sid;
 }
 
 void Voice::updateVoice() {
@@ -266,7 +250,6 @@ void Voice::updateVoice() {
     float modKey = this->key;
     if (synth.pitch) {
         modKey += (1.0/2048.0)*synth.pitch;
-        printf("%g %d\n", modKey, synth.pitch);
     }
 
     int freq = getSidFrequency(modKey);
