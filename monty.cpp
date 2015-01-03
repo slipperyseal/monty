@@ -220,15 +220,12 @@ void Voice::setNoteOn(int key, int velocity) {
     this->velocity = velocity;
     this->frame = 0;
 
-    // ADSR
     writeSid(this->offset + REGISTER_AD,
             (synth.instrument.velocityFunction & VELOCITY_ATTACK) ?
                     (0xf - ((velocity>>3)<<4)) | (synth.instrument.attackDecay & 0x0f) :
-                    synth.instrument.attackDecay ); // attack/decay
+                    synth.instrument.attackDecay );
     writeSid(this->offset + REGISTER_SR,
-            synth.instrument.sustainRelease); // sustain/release
-
-    // CONTROL
+            synth.instrument.sustainRelease);
     writeSid(this->offset + REGISTER_CONTROL, synth.instrument.control | VOICE_GATE);
 
     updateVoice();
@@ -241,10 +238,6 @@ int getSidFrequency(float key) {
 }
 
 void Voice::updateVoice() {
-    if (this->velocity == 0) {
-        return;
-    }
-
     this->frame++;
 
     float modKey = this->key;
@@ -266,7 +259,6 @@ void Voice::updateVoice() {
 
 void Voice::setVoiceOff() {
     this->velocity = 0;
-    this->key = 0;
     this->sustain = 0;
     writeSid(this->offset+REGISTER_CONTROL, synth.instrument.control & VOICE_CLOSEGATE);
 }
