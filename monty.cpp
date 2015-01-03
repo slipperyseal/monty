@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+#include <math.h>
 
 #include "monty.h"
 
@@ -18,13 +19,8 @@
 // todo: current implementation does not activate 1mhz clock. i'm still working on that.
 // todo: parametize midi device "/dev/snd/midiC1D0"
 //
-// gcc monty.cpp -o monty
+// gcc monty.cpp -o monty -lm
 // sudo ./monty
-
-static unsigned char gpioToGPFSEL[] = {
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
-};
 
 // Define the shift up for the 3 bits per pin in each GPFSEL port
 static unsigned char gpioToShift[] = {
@@ -34,24 +30,6 @@ static unsigned char gpioToShift[] = {
 
 static const int DATA[] = { 11, 9, 10, 22, 27, 17, 3, 2 };
 static const int ADDR[] = { 23, 24, 25, 8, 7 };
-
-static const unsigned short noteTable[] = {
-    // C     C#     D      D#     E      E#      F     G     G#     A      A#     B
-    0x0116,0x0127,0x0138,0x014b,0x015e,0x0173,0x0189,0x01a1,0x01ba,0x01d4,0x01f0,0x020d, // 1
-    0x022c,0x024e,0x0271,0x0296,0x02bd,0x02e7,0x0313,0x0342,0x0374,0x03a8,0x03e0,0x041b, // 2
-    0x0459,0x049c,0x04e2,0x052c,0x057b,0x05ce,0x0627,0x0684,0x06e8,0x0751,0x07c0,0x0836, // 3
-    0x08b3,0x0938,0x09c4,0x0a59,0x0af6,0x0b9d,0x0c4e,0x0d09,0x0dd0,0x0ea2,0x0f81,0x106d, // 4
-    0x1167,0x1270,0x1388,0x14b2,0x15ed,0x173a,0x189c,0x1a13,0x1ba0,0x1d44,0x1f02,0x20da, // 5
-    0x22ce,0x24e0,0x2711,0x2964,0x2bda,0x2e75,0x3138,0x3426,0x3740,0x3a89,0x3e04,0x41b4, // 6
-    0x459c,0x49c0,0x4e22,0x52c8,0x57b4,0x5ceb,0x6271,0x684c,0x6e80,0x7512,0x7c08,0x8368, // 7
-    0x8b38,0x9380,0x9c45,0xa590,0xaf68,0xb9d6,0xc4e3,0xd098,0xdd00,0xea24,0xf810         // 8
-};
-
-// small sine table used from tremelo effects etc
-static const signed char sinTable[] = { // 360deg +- 64
-    0,  12,  24,  35,  45,  53,  59,  62,  64,  62,  59,  53,  45,  35,  24,  12,
-    0, -12, -24, -35, -45, -53, -59, -62, -64, -62, -59, -53, -45, -35, -24, -12
-};
 
 unsigned long dataPins[256];
 unsigned long addrPins[32];
@@ -103,34 +81,38 @@ void startSidClock(int freq) {
     iowrite32(0x00000F9, (unsigned long *) gpio_timer + TIMER_PRE_DIV);
 }
 
+int gpioToGPFSEL(int x) {
+    return x/10;
+}
+
 void setPinsToOutput(void) {
     int i, fSel, shift;
 
     for (i = 0; i < 8; i++) {
-        fSel = gpioToGPFSEL[DATA[i]];
+        fSel = gpioToGPFSEL(DATA[i]);
         shift = gpioToShift[DATA[i]];
         iowrite32(ioread32((unsigned long *) gpio + fSel) & ~(7 << shift)  | (1 << shift), (unsigned long *) gpio + fSel);
     }
 
     for (i = 0; i < 5; i++) {
-        fSel = gpioToGPFSEL[ADDR[i]];
+        fSel = gpioToGPFSEL(ADDR[i]);
         shift = gpioToShift[ADDR[i]];
         iowrite32(ioread32((unsigned long *) gpio + fSel) & ~(7 << shift)  | (1 << shift), (unsigned long *) gpio + fSel);
     }
 
-    fSel = gpioToGPFSEL[CS];
+    fSel = gpioToGPFSEL(CS);
     shift = gpioToShift[CS];
     iowrite32(ioread32((unsigned long *) gpio + fSel) & ~(7 << shift) | (1 << shift), (unsigned long *) gpio + fSel);
 
-    fSel = gpioToGPFSEL[RW];
+    fSel = gpioToGPFSEL(RW);
     shift = gpioToShift[RW];
     iowrite32(ioread32((unsigned long *) gpio + fSel) & ~(7 << shift) | (1 << shift), (unsigned long *) gpio + fSel);
 
-    fSel = gpioToGPFSEL[RES];
+    fSel = gpioToGPFSEL(RES);
     shift = gpioToShift[RES];
     iowrite32(ioread32((unsigned long *) gpio + fSel) & ~(7 << shift) | (1 << shift), (unsigned long *) gpio + fSel);
 
-    fSel = gpioToGPFSEL[CLK];
+    fSel = gpioToGPFSEL(CLK);
     shift = gpioToShift[CLK];
     iowrite32(ioread32((unsigned long *) gpio + fSel) & ~(7 << shift) | (4 << shift), (unsigned long *) gpio + fSel);
 }
@@ -268,18 +250,26 @@ void Voice::setNoteOn(int key, int velocity) {
     updateVoice();
 }
 
+int getSidFrequency(float key) {
+    float freq = 8.1758 * powf(2,((key < 0 ? 0 : key > 127 ? 127 : key)/12.0));
+    float sid = (16777216.0 / 985248.0) * freq; // 1022727 for 6567R8 VIC 6567R56A
+    return (int)(sid > 0xffff ? 0 : sid);
+}
+
 void Voice::updateVoice() {
-    int freq = noteTable[ this->key ];
+    if (this->velocity == 0) {
+        return;
+    }
 
     this->frame++;
 
-    // adjust freq based on pitch wheel
-    freq += (synth.pitch >> 2);
-    // do tremelo if needed
-    if (synth.modulation > 0) {
-        freq += (sinTable[ (synth.frame * (synth.modulation >> 3)) & 31 ] >> 1);  // >> 3 = Zxxxxxxx -> 000Zxxxx
+    float modKey = this->key;
+    if (synth.pitch) {
+        modKey += (1.0/2048.0)*synth.pitch;
+        printf("%g %d\n", modKey, synth.pitch);
     }
 
+    int freq = getSidFrequency(modKey);
     int off = this->offset;
 
     writeSid(off + REGISTER_FREQ_LO, freq & 0xff);

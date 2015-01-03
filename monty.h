@@ -84,27 +84,26 @@ struct bcm2835_peripheral {
 
 class Instrument {
 public:
-    int control;			    // waveform control register
-    int filterFlags;		  // filter flags
+    int control;          // waveform control register
+    int filterFlags;	  // filter flags
     int pulseWidth;		  // inital pulse width
-    int attackDecay;		  // A/D
-    int sustainRelease;  // S/R
+    int attackDecay;      // A/D
+    int sustainRelease;   // S/R
     int freqCutoff;		  // filter cutoff
     int resData;
     int resMode;
-    // extra parameters, midi standard range 0-127
-    int defaultModulation;	  // 0 = disable, [midi = chorus]
+    int defaultModulation; // 0 = disable, [midi = chorus]
     int velocityFunction;
     int pulseWidthFunction;
 };
 
 class Voice {
 public:
-    int offset;          // offset to the 3 identicle sets of voice registers (0, 7 or 14)
+    int offset;         // offset to the 3 identicle sets of voice registers (0, 7 or 14)
     int key;
     int velocity;
-    int sustain;			// sustain flag (voice wont be stoped until sustain cleared)
-    int frame;		  	    // frame counter for progressive effects
+    int sustain;        // sustain flag (voice wont be stopped until sustain cleared)
+    int frame;		    // frame counter for progressive effects
 
     void setNoteOn(int key, int velocity);
     void updateVoice();
