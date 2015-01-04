@@ -237,21 +237,19 @@ void Voice::updateVoice() {
     }
 
     int freq = getSidFrequency(modKey);
-    int off = this->offset;
-
-    writeSid(off + REGISTER_FREQ_LO, freq & 0xff);
-    writeSid(off + REGISTER_FREQ_HI, (freq >> 8) & 0xff);
+    writeSid(this->offset + REGISTER_FREQ_LO, freq & 0xff);
+    writeSid(this->offset + REGISTER_FREQ_HI, (freq >> 8) & 0xff);
     if (synth.instrument.control & VOICE_PULSE) {
         int pw = ((synth.instrument.velocityFunction & VELOCITY_PULSEWIDTH) ? this->velocity << 4 : this->frame << 4);
-        writeSid(off + REGISTER_PW_LO, pw & 0xff);
-        writeSid(off + REGISTER_PW_HI, (pw >> 8) & 0xff);
+        writeSid(this->offset + REGISTER_PW_LO, pw & 0xff);
+        writeSid(this->offset + REGISTER_PW_HI, (pw >> 8) & 0xff);
     }
 }
 
 void Voice::setVoiceOff() {
     this->velocity = 0;
     this->sustain = 0;
-    writeSid(this->offset+REGISTER_CONTROL, synth.instrument.control & VOICE_CLOSEGATE);
+    writeSid(this->offset + REGISTER_CONTROL, synth.instrument.control & VOICE_CLOSEGATE);
 }
 
 void setupSnyth() {
@@ -329,7 +327,7 @@ void injectMidi(int command, int data1, int data2) {
 }
 
 void readFromMidi(const char * device) {
-    FILE * fp = fopen("/dev/snd/midiC1D0","r");
+    FILE * fp = fopen(device,"r");
     if( fp == NULL ) {
         perror("error opening MIDI device\n");
         exit(EXIT_FAILURE);
@@ -387,17 +385,17 @@ void readFromSocket(int port) {
 }
 
 int main(int argc, char *argv[]) {
-    mapPeripheral(&gpioPlease, GPIO_BLOCK_SIZE);
-    mapPeripheral(&gpioClock, GPIO_CLOCK_BLOCK_SIZE);
-    mapPeripheral(&gpioTimer, GPIO_TIMER_BLOCK_SIZE);
-
-    generatePinTables();
-    setPinsToOutput();
-    startSidClock();
-    sidReset();
-    setupSnyth();
-
     if (argc > 2) {
+        mapPeripheral(&gpioPlease, GPIO_BLOCK_SIZE);
+        mapPeripheral(&gpioClock, GPIO_CLOCK_BLOCK_SIZE);
+        mapPeripheral(&gpioTimer, GPIO_TIMER_BLOCK_SIZE);
+
+        generatePinTables();
+        setPinsToOutput();
+        startSidClock();
+        sidReset();
+        setupSnyth();
+
         if (strcmp(argv[1], "midi") == 0) {
             readFromMidi(argv[2]);
         }
@@ -405,8 +403,8 @@ int main(int argc, char *argv[]) {
             readFromSocket(atoi(argv[2]));
         }
     }
-    printf("usage:  sudo ./monty midi <midi device>     eg. /dev/snd/midiC1D0\n");
-    printf("   or   sudo ./monty socket <port>          eg. 1111\n");
+    printf("usage:  sudo ./monty midi <midi device>     eg. /dev/snd/midiC1D0\n"
+           "   or   sudo ./monty socket <port>          eg. 1111\n");
     exit(EXIT_FAILURE);
 }
 
