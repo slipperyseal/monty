@@ -9,22 +9,17 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include <stdlib.h>
 
 #include "monty.h"
 
-//
 // Monty SID synth for Raspberry Pi
 //
 // GPIO code is based on Jamie Nuttall's excelent SidPI project https://github.com/papawattu/SidPi
 //
-// todo: current implementation does not activate 1mhz clock. i'm still working on that.
-// todo: parametize midi device "/dev/snd/midiC1D0"
-//
-// gcc monty.cpp -o monty -lm -O3
-// sudo ./monty
+// compile with:     gcc monty.cpp -o monty -lm -O3
 
-// Define the shift up for the 3 bits per pin in each GPFSEL port
-static unsigned char gpioToShift[] = {
+static unsigned char gpioToShift[] = { // shift for the 3 bits per pin in each GPFSEL port
     0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 0, 3, 6, 9, 12, 15, 18, 21, 24, 27,
     0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 0, 3, 6, 9, 12, 15, 18, 21, 24, 27
 };
@@ -66,7 +61,8 @@ void writeSid(int reg, int val) {
     sidDelay();
 }
 
-void startSidClock(int freq) {
+void startSidClock() {
+    int freq = 1000000; // The Commodore 64 ran at a blistering 1 Mhz
     int divi = 19200000 / freq;
     int divr = 19200000 % freq;
     int divf = (int) (divr * 4096 / 19200000);
@@ -102,13 +98,6 @@ void setPinsToOutput(void) {
     setPinOutput(CLK, 4);
 }
 
-void sidReset() {
-    for (int i = 0; i < 23; i++) {
-        writeSid(i, 0);
-    }
-    writeSid(24, 15);
-}
-
 void generatePinTables(void) {
     int i;
 
@@ -132,10 +121,10 @@ void generatePinTables(void) {
     }
 }
 
-int mapPeripheral(struct bcm2835_peripheral *p, int blockSize) {
+void mapPeripheral(struct bcm2835_peripheral *p, int blockSize) {
     if ((p->mem_fd = open("/dev/mem", O_RDWR|O_SYNC) ) < 0) {
         printf("Failed to open /dev/mem, try checking permissions.\n");
-        return -1;
+        exit(EXIT_FAILURE);
     }
 
     p->map = mmap(
@@ -148,17 +137,23 @@ int mapPeripheral(struct bcm2835_peripheral *p, int blockSize) {
     );
 
     if (p->map == MAP_FAILED) {
-        perror("mmap");
-        return -1;
+        perror("mmap failed");
+        exit(EXIT_FAILURE);
     }
 
     p->addr = (volatile unsigned int *)p->map;
-    return 0;
 }
 
 void unmapPeripheral(struct bcm2835_peripheral *p, int blockSize) {
     munmap(p->map, blockSize);
     close(p->mem_fd);
+}
+
+void sidReset() {
+    for (int i = 0; i < 23; i++) {
+        writeSid(i, 0);
+    }
+    writeSid(24, 15);
 }
 
 void setNoteOff(int key) {
@@ -227,7 +222,7 @@ void Voice::setNoteOn(int key, int velocity) {
     updateVoice();
 }
 
-int getSidFrequency(float key) {
+int getSidFrequency(float key) { // MIDI note with floating point sub-note accuracy
     float freq = 8.1758 * powf(2,((key < 0 ? 0 : key)/12.0));
     int sid = (int)(16777216.0 / 985248.0) * freq; // 1022727 for 6567R8 VIC 6567R56A
     return sid > 0xffff ? 0 : sid;
@@ -280,6 +275,7 @@ void injectMidi(int command, int data1, int data2) {
     int channel = command & 0x0f;
     int func = command >> 4;
 
+    // for development and debugging. remove this line for production
     printf("channel: %d func: %d note: %d velocity: %d\n", channel, func, data1, data2);
 
     if (channel != synth.channel) {
@@ -332,21 +328,11 @@ void injectMidi(int command, int data1, int data2) {
     }
 }
 
-int main() {
-    mapPeripheral(&gpioPlease, GPIO_BLOCK_SIZE);
-    mapPeripheral(&gpioClock, GPIO_CLOCK_BLOCK_SIZE);
-    mapPeripheral(&gpioTimer, GPIO_TIMER_BLOCK_SIZE);
-
-    generatePinTables();
-    setPinsToOutput();
-    startSidClock(1000000);
-    sidReset();
-    setupSnyth();
-
+void readFromMidi(const char * device) {
     FILE * fp = fopen("/dev/snd/midiC1D0","r");
     if( fp == NULL ) {
         perror("error opening MIDI device\n");
-        return 0;
+        exit(EXIT_FAILURE);
     }
 
     for (;;) {
@@ -360,7 +346,7 @@ int main() {
 struct sockaddr_in clientAddress;
 struct sockaddr_in serverAddress;
 
-void readFromSocket() {
+void readFromSocket(int port) {
     int socketfd = socket(AF_INET, SOCK_STREAM, 0);
     if (socketfd < 0) {
         printf("fail sockfd\n");
@@ -368,11 +354,11 @@ void readFromSocket() {
     }
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_addr.s_addr = INADDR_ANY;
-    serverAddress.sin_port = htons(1111);
+    serverAddress.sin_port = htons(port);
 
     if (bind(socketfd, (struct sockaddr *) &serverAddress, sizeof(serverAddress)) < 0) {
         printf("socket listener failed to bind\n");
-        return;
+        exit(EXIT_FAILURE);
     }
 
     listen(socketfd,5);
@@ -381,7 +367,7 @@ void readFromSocket() {
 
     if (socketfd < 0) {
         printf("no FD\n");
-        return;
+        exit(EXIT_FAILURE);
     }
 
     printf("socket accepted\n");
@@ -391,13 +377,37 @@ void readFromSocket() {
         int n = read(socketfd, buffer, 2);
         if (n < 0) {
             perror("error reading from socket");
-            return;
+            exit(EXIT_FAILURE);
         }
         if (n == 1) {
             read(socketfd, &buffer[1], 1);
         }
         writeSid(buffer[0], buffer[1]);
     }
-    //return 0;
 }
+
+int main(int argc, char *argv[]) {
+    mapPeripheral(&gpioPlease, GPIO_BLOCK_SIZE);
+    mapPeripheral(&gpioClock, GPIO_CLOCK_BLOCK_SIZE);
+    mapPeripheral(&gpioTimer, GPIO_TIMER_BLOCK_SIZE);
+
+    generatePinTables();
+    setPinsToOutput();
+    startSidClock();
+    sidReset();
+    setupSnyth();
+
+    if (argc > 2) {
+        if (strcmp(argv[1], "midi") == 0) {
+            readFromMidi(argv[2]);
+        }
+        if (strcmp(argv[1], "socket") == 0) {
+            readFromSocket(atoi(argv[2]));
+        }
+    }
+    printf("usage:  sudo ./monty midi <midi device>     eg. /dev/snd/midiC1D0\n");
+    printf("   or   sudo ./monty socket <port>          eg. 1111\n");
+    exit(EXIT_FAILURE);
+}
+
 

@@ -126,33 +126,4 @@ public:
     Voice voiceTable[3];
 };
 
-/*
-int mapGPIO(void) {
-    unsigned long mem;
-
-//    mem = request_mem_region(GPIO_BASE, 4096, "gpio");
-//    if (mem == NULL) {
-//        print("Cannot get GPIO");
-//        return -1;
-//    }
-//    gpio = ioremap(GPIO_BASE, 4096);
-
-//    mem = request_mem_region(GPIO_CLOCK, 32, "gpioclk");
-//    if (mem == NULL) {
-//        print("Cannot get GPIO Clock");
-//        return -1;
-//    }
-//    gpio_clock = ioremap(GPIO_CLOCK, 32);
-
-//    mem = request_mem_region(GPIO_TIMER, 256, "gpiotimer");
-//    if (mem == NULL) {
-//        print("Cannot get GPIO timer");
-//        return -1;
-//    }
-//    gpio_timer = ioremap(GPIO_TIMER, 256);
-
-    return 0;
-}
- */
-
 #endif
