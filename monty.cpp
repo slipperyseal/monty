@@ -34,8 +34,9 @@ static const int ADDR[] = { 23, 24, 25, 8, 7 };
 
 unsigned long dataPins[256];
 unsigned long addrPins[32];
-void /*__iomem*/ * gpio, * gpio_clock, * gpio_timer;
 struct bcm2835_peripheral gpioPlease = {GPIO_BASE};
+struct bcm2835_peripheral gpioClock = {GPIO_CLOCK};
+struct bcm2835_peripheral gpioTimer = {GPIO_TIMER};
 Synth synth;
 
 void iowrite32(unsigned long value, unsigned long * addr) {
@@ -55,13 +56,13 @@ void sidDelay() {
 
 void writeSid(int reg, int val) {
     val &= 0xff;
-    iowrite32((unsigned long) addrPins[reg % 32], (unsigned long *) gpio + 7);
-    iowrite32((unsigned long) ~addrPins[reg % 32] & addrPins[31], (unsigned long *) gpio + 10);
-    iowrite32((unsigned long) 1 << CS, (unsigned long *) gpio + 10);
-    iowrite32((unsigned long) dataPins[val % 256], (unsigned long *) gpio + 7);
-    iowrite32((unsigned long) ~dataPins[val % 256] & dataPins[255], (unsigned long *) gpio + 10);
+    iowrite32((unsigned long) addrPins[reg % 32], (unsigned long *) gpioPlease.addr + 7);
+    iowrite32((unsigned long) ~addrPins[reg % 32] & addrPins[31], (unsigned long *) gpioPlease.addr + 10);
+    iowrite32((unsigned long) 1 << CS, (unsigned long *) gpioPlease.addr + 10);
+    iowrite32((unsigned long) dataPins[val % 256], (unsigned long *) gpioPlease.addr + 7);
+    iowrite32((unsigned long) ~dataPins[val % 256] & dataPins[255], (unsigned long *) gpioPlease.addr + 10);
     sidDelay();
-    iowrite32((unsigned long) 1 << CS, (unsigned long *) gpio + 7);
+    iowrite32((unsigned long) 1 << CS, (unsigned long *) gpioPlease.addr + 7);
     sidDelay();
 }
 
@@ -73,19 +74,19 @@ void startSidClock(int freq) {
     if (divi > 4095) {
         divi = 4095;
     }
-    iowrite32(BCM_PASSWORD | GPIO_CLOCK_SOURCE, (unsigned long *) gpio_clock + 28);
-    while ((ioread32((unsigned long *)gpio_clock + 28) & 0x80) != 0);
+    iowrite32(BCM_PASSWORD | GPIO_CLOCK_SOURCE, (unsigned long *) gpioClock.addr + 28);
+    while ((ioread32((unsigned long *)gpioClock.addr + 28) & 0x80) != 0);
 
-    iowrite32(BCM_PASSWORD | (divi << 12) | divf, (unsigned long *) gpio_clock + 29);
-    iowrite32(BCM_PASSWORD | 0x10 | GPIO_CLOCK_SOURCE, (unsigned long *) gpio_clock + 28);
-    iowrite32(0x0000280, (unsigned long *) gpio_timer + TIMER_CONTROL);
-    iowrite32(0x00000F9, (unsigned long *) gpio_timer + TIMER_PRE_DIV);
+    iowrite32(BCM_PASSWORD | (divi << 12) | divf, (unsigned long *) gpioClock.addr + 29);
+    iowrite32(BCM_PASSWORD | 0x10 | GPIO_CLOCK_SOURCE, (unsigned long *) gpioClock.addr + 28);
+    iowrite32(0x0000280, (unsigned long *) gpioTimer.addr + TIMER_CONTROL);
+    iowrite32(0x00000F9, (unsigned long *) gpioTimer.addr + TIMER_PRE_DIV);
 }
 
 void setPinOutput(int pin, int mode) {
     int fSel = pin/10;
     int shift = gpioToShift[pin];
-    iowrite32(ioread32((unsigned long *) gpio + fSel) & ~(7 << shift) | (mode << shift), (unsigned long *) gpio + fSel);
+    iowrite32(ioread32((unsigned long *) gpioPlease.addr + fSel) & ~(7 << shift) | (mode << shift), (unsigned long *) gpioPlease.addr + fSel);
 }
 
 void setPinsToOutput(void) {
@@ -131,7 +132,7 @@ void generatePinTables(void) {
     }
 }
 
-int mapPeripheral(struct bcm2835_peripheral *p) {
+int mapPeripheral(struct bcm2835_peripheral *p, int blockSize) {
     if ((p->mem_fd = open("/dev/mem", O_RDWR|O_SYNC) ) < 0) {
         printf("Failed to open /dev/mem, try checking permissions.\n");
         return -1;
@@ -139,7 +140,7 @@ int mapPeripheral(struct bcm2835_peripheral *p) {
 
     p->map = mmap(
         NULL,
-        GPIO_BLOCK_SIZE,
+        blockSize,
         PROT_READ|PROT_WRITE,
         MAP_SHARED,
         p->mem_fd,      // File descriptor to physical memory virtual file '/dev/mem'
@@ -155,25 +156,17 @@ int mapPeripheral(struct bcm2835_peripheral *p) {
     return 0;
 }
 
-void unmapPeripheral(struct bcm2835_peripheral *p) {
-    munmap(p->map, GPIO_BLOCK_SIZE);
+void unmapPeripheral(struct bcm2835_peripheral *p, int blockSize) {
+    munmap(p->map, blockSize);
     close(p->mem_fd);
 }
 
-Voice * findVoiceForKey(int key) {
+void setNoteOff(int key) {
     for (int x=0;x<TOTAL_VOICES;x++) {
         Voice * voice = &synth.voiceTable[x];
         if (voice->key == key) {
-            return voice;
+            voice->setVoiceOff();
         }
-    }
-    return 0;
-}
-
-void setNoteOff(int key) {
-    Voice * voice;
-    if ((voice = findVoiceForKey(key)) != 0) {
-        voice->setVoiceOff();
     }
 }
 
@@ -217,6 +210,9 @@ void Voice::setNoteOn(int key, int velocity) {
     // set up voice
     this->key = key;
     this->sustain = synth.sustain; // remember sustain state when key was pressed
+    if (velocity < 50) {
+        velocity = 50;
+    }
     this->velocity = velocity;
     this->frame = 0;
 
@@ -337,11 +333,13 @@ void injectMidi(int command, int data1, int data2) {
 }
 
 int main() {
-    mapPeripheral(&gpioPlease);
-    gpio = (void*)gpioPlease.addr;
+    mapPeripheral(&gpioPlease, GPIO_BLOCK_SIZE);
+    mapPeripheral(&gpioClock, GPIO_CLOCK_BLOCK_SIZE);
+    mapPeripheral(&gpioTimer, GPIO_TIMER_BLOCK_SIZE);
 
     generatePinTables();
     setPinsToOutput();
+    startSidClock(1000000);
     sidReset();
     setupSnyth();
 
