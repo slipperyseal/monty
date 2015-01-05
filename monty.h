@@ -52,13 +52,6 @@
 
 #define TOTAL_VOICES    3
 
-struct bcm2835_peripheral {
-    unsigned long addr_p;
-    int mem_fd;
-    void * map;
-    volatile unsigned int * addr;
-};
-
 #define MIDI_COMMANDBIT            (8<<4)
 
 // MIDI HI
@@ -84,8 +77,14 @@ struct bcm2835_peripheral {
 #define MIDI_CONTROL_SUSTAIN               64
 #define MIDI_CONTROL_REVERB                91
 
-class Instrument {
-public:
+struct bcm2835_peripheral {
+    unsigned long addr_p;
+    int mem_fd;
+    void * map;
+    volatile unsigned int * addr;
+};
+
+struct Instrument {
     int control;          // waveform control register
     int filterFlags;	  // filter flags
     int pulseWidth;		  // inital pulse width
@@ -99,31 +98,25 @@ public:
     int pulseWidthFunction;
 };
 
-class Voice {
-public:
+struct Voice {
     int offset;         // offset to the 3 identicle sets of voice registers (0, 7 or 14)
     int key;
     int velocity;
     int sustain;        // sustain flag (voice wont be stopped until sustain cleared)
     int frame;		    // frame counter for progressive effects
-
-    void setNoteOn(int key, int velocity);
-    void updateVoice();
-    void setVoiceOff();
 };
 
-class Synth {
-public:
+struct Synth {
     int frame;
     int channel;     // the channel we are listening for
-    Instrument instrument;
     int pitch;       // pitch wheel position
     int modulation;  // 64 = center
     int reverb;
     int sustain;
     int volume;
     int nextVoice;
-    Voice voiceTable[3];
+    struct Instrument instrument;
+    struct Voice voiceTable[3];
 };
 
 #endif

@@ -1,15 +1,15 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <time.h>
+#include <math.h>
+#include <netinet/in.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <string.h>
-#include <math.h>
-#include <time.h>
-#include <stdlib.h>
 
 #include "monty.h"
 
@@ -17,7 +17,7 @@
 //
 // GPIO code is based on Jamie Nuttall's excelent SidPI project https://github.com/papawattu/SidPi
 //
-// compile with:     gcc monty.cpp -o monty -lm -O3
+// compile with:     gcc monty.c -o monty -lm -O3
 
 static unsigned char gpioToShift[] = { // shift for the 3 bits per pin in each GPFSEL port
     0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 0, 3, 6, 9, 12, 15, 18, 21, 24, 27,
@@ -32,7 +32,9 @@ unsigned long addrPins[32];
 struct bcm2835_peripheral gpioPlease = {GPIO_BASE};
 struct bcm2835_peripheral gpioClock = {GPIO_CLOCK};
 struct bcm2835_peripheral gpioTimer = {GPIO_TIMER};
-Synth synth;
+struct sockaddr_in clientAddress;
+struct sockaddr_in serverAddress;
+struct Synth synth;
 
 void iowrite32(unsigned long value, unsigned long * addr) {
     ((volatile unsigned long *)addr)[0] = value;
@@ -86,10 +88,11 @@ void setPinOutput(int pin, int mode) {
 }
 
 void setPinsToOutput(void) {
-    for (int i = 0; i < 8; i++) {
+    int i;
+    for (i = 0; i < 8; i++) {
         setPinOutput(DATA[i], 1);
     }
-    for (int i = 0; i < 5; i++) {
+    for (i = 0; i < 5; i++) {
         setPinOutput(ADDR[i], 1);
     }
     setPinOutput(CS, 1);
@@ -121,7 +124,7 @@ void generatePinTables(void) {
     }
 }
 
-void mapPeripheral(struct bcm2835_peripheral *p, int blockSize) {
+void mapPeripheral(struct bcm2835_peripheral * p, int blockSize) {
     if ((p->mem_fd = open("/dev/mem", O_RDWR|O_SYNC) ) < 0) {
         printf("Failed to open /dev/mem, try checking permissions.\n");
         exit(EXIT_FAILURE);
@@ -144,30 +147,102 @@ void mapPeripheral(struct bcm2835_peripheral *p, int blockSize) {
     p->addr = (volatile unsigned int *)p->map;
 }
 
-void unmapPeripheral(struct bcm2835_peripheral *p, int blockSize) {
+void unmapPeripheral(struct bcm2835_peripheral * p, int blockSize) {
     munmap(p->map, blockSize);
     close(p->mem_fd);
 }
 
 void sidReset() {
-    for (int i = 0; i < 23; i++) {
+    int i;
+    for (i = 0; i < 23; i++) {
         writeSid(i, 0);
     }
     writeSid(24, 15);
 }
 
+struct Voice * findVoice() {
+    int x;
+    if (++synth.nextVoice >= TOTAL_VOICES) {
+        synth.nextVoice = 0;
+    }
+
+    for (x=0;x<TOTAL_VOICES;x++) {
+        int v = synth.nextVoice + x;
+        if (v >= TOTAL_VOICES) {
+            v -= TOTAL_VOICES;
+        }
+        struct Voice * voice = &synth.voiceTable[v];
+        if (voice->velocity == 0) {
+            return voice;
+        }
+    }
+    return &synth.voiceTable[ synth.nextVoice ];
+}
+
+int getSidFrequency(float key) { // MIDI note with floating point sub-note accuracy
+    float freq = 8.1758 * powf(2,((key < 0 ? 0 : key)/12.0));
+    int sid = (int)(16777216.0 / 985248.0) * freq; // 1022727 for 6567R8 VIC 6567R56A
+    return sid > 0xffff ? 0xffff : sid;
+}
+
+void updateVoice(struct Voice * voice) {
+    voice->frame++;
+
+    float modKey = voice->key;
+    if (synth.pitch) {
+        modKey += (1.0/2048.0)*synth.pitch;
+    }
+
+    int freq = getSidFrequency(modKey);
+    writeSid(voice->offset + REGISTER_FREQ_LO, freq & 0xff);
+    writeSid(voice->offset + REGISTER_FREQ_HI, (freq >> 8) & 0xff);
+    if (synth.instrument.control & VOICE_PULSE) {
+        int pw = ((synth.instrument.velocityFunction & VELOCITY_PULSEWIDTH) ? voice->velocity << 4 : voice->frame << 4);
+        writeSid(voice->offset + REGISTER_PW_LO, pw & 0xff);
+        writeSid(voice->offset + REGISTER_PW_HI, (pw >> 8) & 0xff);
+    }
+}
+
+void setNoteOn(struct Voice * voice, int key, int velocity) {
+    voice->key = key;
+    voice->sustain = synth.sustain; // remember sustain state when key was pressed
+    if (velocity < 50) {
+        velocity = 50;
+    }
+    voice->velocity = velocity;
+    voice->frame = 0;
+
+    writeSid(voice->offset + REGISTER_AD,
+            (synth.instrument.velocityFunction & VELOCITY_ATTACK) ?
+                    (0xf - ((velocity>>3)<<4)) | (synth.instrument.attackDecay & 0x0f) :
+                    synth.instrument.attackDecay );
+    writeSid(voice->offset + REGISTER_SR,
+            synth.instrument.sustainRelease);
+    writeSid(voice->offset + REGISTER_CONTROL, synth.instrument.control | VOICE_GATE);
+
+    updateVoice(voice);
+}
+
+void setVoiceOff(struct Voice * voice) {
+    voice->velocity = 0;
+    voice->sustain = 0;
+    writeSid(voice->offset + REGISTER_CONTROL, synth.instrument.control & VOICE_CLOSEGATE);
+}
+
 void setNoteOff(int key) {
-    for (int x=0;x<TOTAL_VOICES;x++) {
-        Voice * voice = &synth.voiceTable[x];
+    int x;
+    for (x=0;x<TOTAL_VOICES;x++) {
+        struct Voice * voice = &synth.voiceTable[x];
         if (voice->key == key) {
-            voice->setVoiceOff();
+            setVoiceOff(voice);
         }
     }
 }
 
 void setSustain() {
-    for (int x=0;x<TOTAL_VOICES;x++) {
-        Voice * voice = &synth.voiceTable[x];
+    int x;
+    for (x=0;x<TOTAL_VOICES;x++) {
+        struct Voice * voice = &synth.voiceTable[x];
         if (voice->velocity != 0) {
             voice->sustain = synth.sustain;
         }
@@ -175,88 +250,21 @@ void setSustain() {
 }
 
 void releaseSustain() {
-    for (int x=0;x<TOTAL_VOICES;x++) {
-        Voice * voice = &synth.voiceTable[x];
+    int x;
+    for (x=0;x<TOTAL_VOICES;x++) {
+        struct Voice * voice = &synth.voiceTable[x];
         if (voice->sustain != 0 && voice->velocity != 0) {
-            voice->setVoiceOff();
+            setVoiceOff(voice);
         }
     }
-}
-
-Voice * findVoice() {
-    if (++synth.nextVoice >= TOTAL_VOICES) {
-        synth.nextVoice = 0;
-    }
-
-    for (int x=0;x<TOTAL_VOICES;x++) {
-        int v = synth.nextVoice + x;
-        if (v >= TOTAL_VOICES) {
-            v -= TOTAL_VOICES;
-        }
-        Voice * voice = &synth.voiceTable[v];
-        if (voice->velocity == 0) {
-            return voice;
-        }
-    }
-    return (Voice*)&synth.voiceTable[ synth.nextVoice ];
-}
-
-void Voice::setNoteOn(int key, int velocity) {
-    // set up voice
-    this->key = key;
-    this->sustain = synth.sustain; // remember sustain state when key was pressed
-    if (velocity < 50) {
-        velocity = 50;
-    }
-    this->velocity = velocity;
-    this->frame = 0;
-
-    writeSid(this->offset + REGISTER_AD,
-            (synth.instrument.velocityFunction & VELOCITY_ATTACK) ?
-                    (0xf - ((velocity>>3)<<4)) | (synth.instrument.attackDecay & 0x0f) :
-                    synth.instrument.attackDecay );
-    writeSid(this->offset + REGISTER_SR,
-            synth.instrument.sustainRelease);
-    writeSid(this->offset + REGISTER_CONTROL, synth.instrument.control | VOICE_GATE);
-
-    updateVoice();
-}
-
-int getSidFrequency(float key) { // MIDI note with floating point sub-note accuracy
-    float freq = 8.1758 * powf(2,((key < 0 ? 0 : key)/12.0));
-    int sid = (int)(16777216.0 / 985248.0) * freq; // 1022727 for 6567R8 VIC 6567R56A
-    return sid > 0xffff ? 0 : sid;
-}
-
-void Voice::updateVoice() {
-    this->frame++;
-
-    float modKey = this->key;
-    if (synth.pitch) {
-        modKey += (1.0/2048.0)*synth.pitch;
-    }
-
-    int freq = getSidFrequency(modKey);
-    writeSid(this->offset + REGISTER_FREQ_LO, freq & 0xff);
-    writeSid(this->offset + REGISTER_FREQ_HI, (freq >> 8) & 0xff);
-    if (synth.instrument.control & VOICE_PULSE) {
-        int pw = ((synth.instrument.velocityFunction & VELOCITY_PULSEWIDTH) ? this->velocity << 4 : this->frame << 4);
-        writeSid(this->offset + REGISTER_PW_LO, pw & 0xff);
-        writeSid(this->offset + REGISTER_PW_HI, (pw >> 8) & 0xff);
-    }
-}
-
-void Voice::setVoiceOff() {
-    this->velocity = 0;
-    this->sustain = 0;
-    writeSid(this->offset + REGISTER_CONTROL, synth.instrument.control & VOICE_CLOSEGATE);
 }
 
 void setupSnyth() {
-    memset(&synth, 0, sizeof(synth));
+    int x;
 
-    for (int x=0;x<TOTAL_VOICES;x++) {
-        Voice * voice = (Voice*)&synth.voiceTable[x];
+    memset(&synth, 0, sizeof(synth));
+    for (x=0;x<TOTAL_VOICES;x++) {
+        struct Voice * voice = &synth.voiceTable[x];
         voice->offset = x * 7;
     }
 
@@ -272,6 +280,7 @@ void setupSnyth() {
 void injectMidi(int command, int data1, int data2) {
     int channel = command & 0x0f;
     int func = command >> 4;
+    int x;
 
     // for development and debugging. remove this line for production
     printf("channel: %d func: %d note: %d velocity: %d\n", channel, func, data1, data2);
@@ -287,7 +296,7 @@ void injectMidi(int command, int data1, int data2) {
             if (data2 == 0) {
                 setNoteOff(data1);
             } else if (data1 < 95) {
-                findVoice()->setNoteOn(data1, data2);
+                setNoteOn(findVoice(), data1, data2);
             }
             break;
         case MIDI_CONTROL:
@@ -315,8 +324,8 @@ void injectMidi(int command, int data1, int data2) {
             break;
         case MIDI_PITCHWHEEL:
             synth.pitch = ((data1 | (data2 << 8)) - 16384);
-            for (int x=0;x<TOTAL_VOICES;x++) {
-                synth.voiceTable[x].updateVoice();
+            for (x=0;x<TOTAL_VOICES;x++) {
+                updateVoice(&synth.voiceTable[x]);
             }
             break;
         case MIDI_PROGRAM:
@@ -340,9 +349,6 @@ void readFromMidi(const char * device) {
         }
     }
 }
-
-struct sockaddr_in clientAddress;
-struct sockaddr_in serverAddress;
 
 void readFromSocket(int port) {
     int socketfd = socket(AF_INET, SOCK_STREAM, 0);
