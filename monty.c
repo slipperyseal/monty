@@ -50,7 +50,7 @@ unsigned long ioread32(unsigned long * addr) {
 void delayNanos(long nanos) {
     struct timespec tim, tim2;
     tim.tv_sec = 0;
-    tim.tv_nsec = nanos; // 1000 nanoseconds; 1 microsecond; cycle time of 1 Mhz
+    tim.tv_nsec = nanos;
     nanosleep(&tim, &tim2);
 }
 
@@ -61,7 +61,7 @@ void writeSid(int reg, int val) {
     iowrite32((unsigned long) 1 << CS, (unsigned long *) gpioPlease.addr + 10);
     iowrite32((unsigned long) dataPins[val % 256], (unsigned long *) gpioPlease.addr + 7);
     iowrite32((unsigned long) ~dataPins[val % 256] & dataPins[255], (unsigned long *) gpioPlease.addr + 10);
-    delayNanos(1000);
+    delayNanos(1000); // 1000 nanoseconds; 1 microsecond; cycle time of 1 Mhz
     iowrite32((unsigned long) 1 << CS, (unsigned long *) gpioPlease.addr + 7);
     delayNanos(1000);
 }
@@ -195,7 +195,8 @@ void updateVoice(struct Voice * voice) {
     }
 
     if (synth.frequencyScan) {
-        modKey += (1.0 * (256.0 / (voice->frame & 0xff))) * (1.0 * (128.0/synth.frequencyScan));
+        float scan = (1.0/128.0) * synth.frequencyScan;
+        modKey += (((1.0/256.0) * ((voice->frame & 0xff) * scan)) * 5);
     }
 
     int freq = getSidFrequency(modKey);
@@ -289,7 +290,7 @@ void injectMidi(int command, int data1, int data2) {
     int x;
 
     // for development and debugging. remove this line for production
-    printf("channel: %d func: %d note: %d velocity: %d\n", channel, func, data1, data2);
+    //printf("channel: %d func: %d note: %d velocity: %d\n", channel, func, data1, data2);
 
     if (channel != synth.channel) {
         return;
@@ -317,6 +318,25 @@ void injectMidi(int command, int data1, int data2) {
                     break;
                 case MIDI_CONTROL_2:
                     synth.frequencyScan = data2;
+                    break;
+                case MIDI_CONTROL_8:
+                    switch (data2 >> 4) {
+                        case 0:
+                            synth.instrument.control = VOICE_PULSE;
+                            break;
+                        case 1:
+                            synth.instrument.control = VOICE_TRIANGE;
+                            break;
+                        case 2:
+                            synth.instrument.control = VOICE_SAWTOOTH;
+                            break;
+                        case 3:
+                            synth.instrument.control = VOICE_NOISE;
+                            break;
+                        case 4:
+                            synth.instrument.control = VOICE_RINGMOD;
+                            break;
+                    }
                     break;
                 case MIDI_CONTROL_VOLUME:
                     writeSid(REGISTER_VOLUME, (synth.volume = data2 >> 3) );  // 0xxxxxxx -> 0000xxxx
@@ -349,7 +369,7 @@ void injectMidi(int command, int data1, int data2) {
 
 void * timerLoop() {
     for (;;) {
-        delayNanos(100000); // 100th of a second
+        delayNanos(100000);
         pthread_mutex_lock(&lock);
         int x;
         for (x=0;x<TOTAL_VOICES;x++) {
