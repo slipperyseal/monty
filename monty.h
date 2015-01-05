@@ -101,7 +101,6 @@ struct Instrument {
     int resMode;
     int defaultModulation; // 0 = disable, [midi = chorus]
     int velocityFunction;
-    int pulseWidthFunction;
 };
 
 struct Voice {

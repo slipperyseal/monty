@@ -203,7 +203,7 @@ void updateVoice(struct Voice * voice) {
     writeSid(voice->offset + REGISTER_FREQ_LO, freq & 0xff);
     writeSid(voice->offset + REGISTER_FREQ_HI, (freq >> 8) & 0xff);
     if (synth.instrument.control & VOICE_PULSE) {
-        int pw = ((synth.instrument.velocityFunction & VELOCITY_PULSEWIDTH) ? voice->velocity << 4 : voice->frame << 4);
+        int pw = synth.instrument.pulseWidth << 5; // 7 bit > 12 bit number
         writeSid(voice->offset + REGISTER_PW_LO, pw & 0xff);
         writeSid(voice->offset + REGISTER_PW_HI, (pw >> 8) & 0xff);
     }
@@ -278,6 +278,7 @@ void setupSnyth() {
     synth.instrument.control = VOICE_TRIANGE;
     synth.instrument.attackDecay = 0x7c;
     synth.instrument.sustainRelease = 0x33;
+    synth.instrument.pulseWidth = 0xff;
 
     synth.channel = 0;
     synth.volume = 15;
@@ -318,6 +319,9 @@ void injectMidi(int command, int data1, int data2) {
                     break;
                 case MIDI_CONTROL_2:
                     synth.frequencyScan = data2;
+                    break;
+                case MIDI_CONTROL_3:
+                    synth.instrument.pulseWidth = data2;
                     break;
                 case MIDI_CONTROL_8:
                     switch (data2 >> 4) {
