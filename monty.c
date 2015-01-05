@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <math.h>
+#include <pthread.h>
 #include <netinet/in.h>
 #include <sys/mman.h>
 #include <sys/types.h>
@@ -17,7 +18,7 @@
 //
 // GPIO code is based on Jamie Nuttall's excelent SidPI project https://github.com/papawattu/SidPi
 //
-// compile with:     gcc monty.c -o monty -lm -O3
+// compile with:     gcc monty.c -o monty -lm -lpthread -O3
 
 static unsigned char gpioToShift[] = { // shift for the 3 bits per pin in each GPFSEL port
     0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 0, 3, 6, 9, 12, 15, 18, 21, 24, 27,
@@ -34,6 +35,8 @@ struct bcm2835_peripheral gpioClock = {GPIO_CLOCK};
 struct bcm2835_peripheral gpioTimer = {GPIO_TIMER};
 struct sockaddr_in clientAddress;
 struct sockaddr_in serverAddress;
+pthread_t thread;
+pthread_mutex_t lock;
 struct Synth synth;
 
 void iowrite32(unsigned long value, unsigned long * addr) {
@@ -44,10 +47,10 @@ unsigned long ioread32(unsigned long * addr) {
     return ((volatile unsigned long *)addr)[0];
 }
 
-void sidDelay() {
+void delayNanos(long nanos) {
     struct timespec tim, tim2;
     tim.tv_sec = 0;
-    tim.tv_nsec = 1000; // 1000 nanoseconds; 1 microsecond; cycle time of 1 Mhz
+    tim.tv_nsec = nanos; // 1000 nanoseconds; 1 microsecond; cycle time of 1 Mhz
     nanosleep(&tim, &tim2);
 }
 
@@ -58,9 +61,9 @@ void writeSid(int reg, int val) {
     iowrite32((unsigned long) 1 << CS, (unsigned long *) gpioPlease.addr + 10);
     iowrite32((unsigned long) dataPins[val % 256], (unsigned long *) gpioPlease.addr + 7);
     iowrite32((unsigned long) ~dataPins[val % 256] & dataPins[255], (unsigned long *) gpioPlease.addr + 10);
-    sidDelay();
+    delayNanos(1000);
     iowrite32((unsigned long) 1 << CS, (unsigned long *) gpioPlease.addr + 7);
-    sidDelay();
+    delayNanos(1000);
 }
 
 void startSidClock() {
@@ -103,7 +106,6 @@ void setPinsToOutput(void) {
 
 void generatePinTables(void) {
     int i;
-
     for (i = 0; i < 256; i++) {
         dataPins[i] = (unsigned long) (i & 1) << DATA[0];
         dataPins[i] |= (unsigned long) ((i & 2) >> 1) << DATA[1];
@@ -114,7 +116,6 @@ void generatePinTables(void) {
         dataPins[i] |= (unsigned long) ((i & 64) >> 6) << DATA[6];
         dataPins[i] |= (unsigned long) ((i & 128) >> 7) << DATA[7];
     }
-
     for (i = 0; i < 32; i++) {
         addrPins[i] = (unsigned long) (i & 1) << ADDR[0];
         addrPins[i] |= (unsigned long) ((i & 2) >> 1) << ADDR[1];
@@ -193,6 +194,10 @@ void updateVoice(struct Voice * voice) {
         modKey += (1.0/2048.0)*synth.pitch;
     }
 
+    if (synth.frequencyScan) {
+        modKey += (1.0 * (256.0 / (voice->frame & 0xff))) * (1.0 * (128.0/synth.frequencyScan));
+    }
+
     int freq = getSidFrequency(modKey);
     writeSid(voice->offset + REGISTER_FREQ_LO, freq & 0xff);
     writeSid(voice->offset + REGISTER_FREQ_HI, (freq >> 8) & 0xff);
@@ -218,9 +223,10 @@ void setNoteOn(struct Voice * voice, int key, int velocity) {
                     synth.instrument.attackDecay );
     writeSid(voice->offset + REGISTER_SR,
             synth.instrument.sustainRelease);
-    writeSid(voice->offset + REGISTER_CONTROL, synth.instrument.control | VOICE_GATE);
 
     updateVoice(voice);
+
+    writeSid(voice->offset + REGISTER_CONTROL, synth.instrument.control | VOICE_GATE);
 }
 
 void setVoiceOff(struct Voice * voice) {
@@ -288,6 +294,8 @@ void injectMidi(int command, int data1, int data2) {
     if (channel != synth.channel) {
         return;
     }
+
+    pthread_mutex_lock(&lock);
     switch (func) {
         case MIDI_NOTEOFF:
             setNoteOff(data1);
@@ -306,6 +314,9 @@ void injectMidi(int command, int data1, int data2) {
                     return;
                 case MIDI_CONTROL_MODULATION:
                     synth.modulation = data2;
+                    break;
+                case MIDI_CONTROL_2:
+                    synth.frequencyScan = data2;
                     break;
                 case MIDI_CONTROL_VOLUME:
                     writeSid(REGISTER_VOLUME, (synth.volume = data2 >> 3) );  // 0xxxxxxx -> 0000xxxx
@@ -333,9 +344,27 @@ void injectMidi(int command, int data1, int data2) {
             sidReset();
             break;
     }
+    pthread_mutex_unlock(&lock);
+}
+
+void * timerLoop() {
+    for (;;) {
+        delayNanos(100000); // 100th of a second
+        pthread_mutex_lock(&lock);
+        int x;
+        for (x=0;x<TOTAL_VOICES;x++) {
+            updateVoice(&synth.voiceTable[x]);
+        }
+        pthread_mutex_unlock(&lock);
+    }
 }
 
 void readFromMidi(const char * device) {
+    pthread_create(&thread, NULL, timerLoop, NULL);
+    if (pthread_mutex_init(&lock, NULL) != 0) {
+        exit(EXIT_FAILURE);
+    }
+
     FILE * fp = fopen(device,"r");
     if( fp == NULL ) {
         perror("error opening MIDI device\n");

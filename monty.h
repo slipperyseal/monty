@@ -73,7 +73,13 @@
 //1111 0000
 
 #define MIDI_CONTROL_MODULATION            1
+#define MIDI_CONTROL_2                     2
+#define MIDI_CONTROL_3                     3
+#define MIDI_CONTROL_4                     4
+#define MIDI_CONTROL_5                     5
+#define MIDI_CONTROL_6                     6
 #define MIDI_CONTROL_VOLUME                7
+#define MIDI_CONTROL_8                     8
 #define MIDI_CONTROL_SUSTAIN               64
 #define MIDI_CONTROL_REVERB                91
 
@@ -111,6 +117,7 @@ struct Synth {
     int channel;     // the channel we are listening for
     int pitch;       // pitch wheel position
     int modulation;  // 64 = center
+    int frequencyScan;
     int reverb;
     int sustain;
     int volume;
