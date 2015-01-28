@@ -2,6 +2,20 @@
 #ifndef _MONTY_H
 #define _MONTY_H
 
+#define BCM2708_PERI_BASE       0x20000000
+#define GPIO_BASE               (BCM2708_PERI_BASE + 0x200000)
+#define GPIO_TIMER              (BCM2708_PERI_BASE + 0x003000)
+#define GPIO_CLOCK              (BCM2708_PERI_BASE + 0x00101000)
+#define TIMER_OFFSET            (4)
+#define GPIO_BLOCK_SIZE         (4*1024)
+#define GPIO_CLOCK_BLOCK_SIZE   32
+#define GPIO_TIMER_BLOCK_SIZE   64
+#define BCM_PASSWORD            0x5A000000
+#define GPIO_CLOCK_SOURCE       1
+#define TIMER_CONTROL           (0x408 >> 2)
+#define TIMER_IRQ_RAW           (0x410 >> 2)
+#define TIMER_PRE_DIV           (0x41C >> 2)
+
 #define VOICE_NOISE  128
 #define VOICE_PULSE  64
 #define VOICE_SAWTOOTH 32
@@ -28,21 +42,6 @@
 #define PULSEWIDTH_VELOCITY 1
 #define PULSEWIDTH_SWEEP 2
 
-// GPIO
-#define BCM2708_PERI_BASE       0x20000000
-#define GPIO_BASE               (BCM2708_PERI_BASE + 0x200000)
-#define GPIO_TIMER              (BCM2708_PERI_BASE + 0x003000)
-#define GPIO_CLOCK              (BCM2708_PERI_BASE + 0x00101000)
-#define TIMER_OFFSET            (4)
-#define GPIO_BLOCK_SIZE         (4*1024)
-#define GPIO_CLOCK_BLOCK_SIZE   32
-#define GPIO_TIMER_BLOCK_SIZE   64
-#define BCM_PASSWORD            0x5A000000
-#define GPIO_CLOCK_SOURCE       1
-#define TIMER_CONTROL           (0x408 >> 2)
-#define TIMER_IRQ_RAW           (0x410 >> 2)
-#define TIMER_PRE_DIV           (0x41C >> 2)
-
 #define SID_HZ 1000000
 
 #define CS  18
@@ -50,38 +49,38 @@
 #define RES 0
 #define CLK 4
 
-#define TOTAL_VOICES    3
+#define SYNTH_KEY_CHANNEL          0
+#define SYNTH_PAD_CHANNEL          1
 
-#define MIDI_COMMANDBIT            (8<<4)
+#define TOTAL_VOICES               3
 
-// MIDI HI
+#define MIDI_COMMANDBIT            128
+
 #define MIDI_NOTEOFF               8
-//1000 0000
 #define MIDI_NOTEON                9
-//1001 0000
 #define MIDI_POLYPHONICAFTERTOUCH  10
-//1010 0000
 #define MIDI_CONTROL               11
-//1011 0000
 #define MIDI_PROGRAM               12
-//1100 0000
 #define MIDI_CHANNELAFTERTOUCH     13
-//1101 0000
 #define MIDI_PITCHWHEEL            14
-//1110 0000
 #define MIDI_SYSEX                 15
-//1111 0000
 
+// standard MIDI
+#define MIDI_CONTROL_BANKSELECT            0
 #define MIDI_CONTROL_MODULATION            1
-#define MIDI_CONTROL_2                     2
-#define MIDI_CONTROL_3                     3
-#define MIDI_CONTROL_4                     4
-#define MIDI_CONTROL_5                     5
-#define MIDI_CONTROL_6                     6
+#define MIDI_CONTROL_BREATH                2
+#define MIDI_CONTROL_FOOT                  4
+#define MIDI_CONTROL_PORTAMENTOTIME        5
 #define MIDI_CONTROL_VOLUME                7
-#define MIDI_CONTROL_8                     8
+#define MIDI_CONTROL_BALANCE               8
+#define MIDI_CONTROL_PAN                   10
 #define MIDI_CONTROL_SUSTAIN               64
 #define MIDI_CONTROL_REVERB                91
+// monty effects
+#define MIDI_CONTROL_SKEW                  1
+#define MIDI_CONTROL_WAVEFORM              2
+#define MIDI_CONTROL_PULSEWIDTH            3
+#define MIDI_CONTROL_FREQUENCY_SCAN        4
 
 struct bcm2835_peripheral {
     unsigned long addr_p;

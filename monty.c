@@ -189,17 +189,19 @@ int getSidFrequency(float key) { // MIDI note with floating point sub-note accur
 void updateVoice(struct Voice * voice) {
     voice->frame++;
 
-    float modKey = voice->key;
+    float note = voice->key;
     if (synth.pitch) {
-        modKey += (1.0/2048.0)*synth.pitch;
+        note += (1.0/2048.0)*synth.pitch;
     }
 
     if (synth.frequencyScan) {
         float scan = (1.0/128.0) * synth.frequencyScan;
-        modKey += (((1.0/256.0) * ((voice->frame & 0xff) * scan)) * 5);
+        float frame = (1.0/0xfff) * (voice->frame & 0xfff);
+        float sine = sin( frame * 360.0 );
+        note += (sine * 5.0 * scan);
     }
 
-    int freq = getSidFrequency(modKey);
+    int freq = getSidFrequency(note);
     writeSid(voice->offset + REGISTER_FREQ_LO, freq & 0xff);
     writeSid(voice->offset + REGISTER_FREQ_HI, (freq >> 8) & 0xff);
     if (synth.instrument.control & VOICE_PULSE) {
@@ -280,9 +282,8 @@ void setupSnyth() {
     synth.instrument.sustainRelease = 0x33;
     synth.instrument.pulseWidth = 0xff;
 
-    synth.channel = 0;
+    synth.channel = SYNTH_KEY_CHANNEL;
     synth.volume = 15;
-    synth.modulation = 64;
 }
 
 void injectMidi(int command, int data1, int data2) {
@@ -311,19 +312,16 @@ void injectMidi(int command, int data1, int data2) {
             break;
         case MIDI_CONTROL:
             switch (data1) {
-                case 0:
-                    sidReset();
-                    return;
                 case MIDI_CONTROL_MODULATION:
                     synth.modulation = data2;
                     break;
-                case MIDI_CONTROL_2:
+                case MIDI_CONTROL_FREQUENCY_SCAN:
                     synth.frequencyScan = data2;
                     break;
-                case MIDI_CONTROL_3:
+                case MIDI_CONTROL_PULSEWIDTH:
                     synth.instrument.pulseWidth = data2;
                     break;
-                case MIDI_CONTROL_8:
+                case MIDI_CONTROL_WAVEFORM:
                     switch (data2 >> 4) {
                         case 0:
                             synth.instrument.control = VOICE_PULSE;
