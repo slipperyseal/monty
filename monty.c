@@ -198,14 +198,14 @@ void updateVoice(struct Voice * voice) {
         float scan = (1.0/128.0) * synth.frequencyScan;
         float frame = (1.0/0xfff) * (voice->frame & 0xfff);
         float sine = sin( frame * 360.0 );
-        note += (sine * 5.0 * scan);
+        note += (sine * (synth.frequencyWidth) * scan);
     }
 
     int freq = getSidFrequency(note);
     writeSid(voice->offset + REGISTER_FREQ_LO, freq & 0xff);
     writeSid(voice->offset + REGISTER_FREQ_HI, (freq >> 8) & 0xff);
     if (synth.instrument.control & VOICE_PULSE) {
-        int pw = synth.instrument.pulseWidth << 5; // 7 bit > 12 bit number
+        int pw = (synth.instrument.pulseWidth+1) << 5; // 7 bit > 12 bit number
         writeSid(voice->offset + REGISTER_PW_LO, pw & 0xff);
         writeSid(voice->offset + REGISTER_PW_HI, (pw >> 8) & 0xff);
     }
@@ -292,7 +292,28 @@ void injectMidi(int command, int data1, int data2) {
     int x;
 
     // for development and debugging. remove this line for production
-    //printf("channel: %d func: %d note: %d velocity: %d\n", channel, func, data1, data2);
+    printf("channel: %d func: %d note: %d velocity: %d\n", channel, func, data1, data2);
+
+	if (channel == synth.channel+1 && func == MIDI_NOTEON) {
+		switch (data1) {
+            case 44:
+            	synth.instrument.control = VOICE_PULSE;
+				break;
+            case 45:
+                synth.instrument.control = VOICE_TRIANGE;
+                break;
+            case 46:
+                synth.instrument.control = VOICE_SAWTOOTH;
+                break;
+            case 47:
+                synth.instrument.control = VOICE_NOISE;
+                break;
+        	case 48:
+                synth.instrument.control = VOICE_RINGMOD;
+      	        break;
+        }
+        return;
+	}	
 
     if (channel != synth.channel) {
         return;
@@ -318,33 +339,17 @@ void injectMidi(int command, int data1, int data2) {
                 case MIDI_CONTROL_FREQUENCY_SCAN:
                     synth.frequencyScan = data2;
                     break;
+                case MIDI_CONTROL_FREQUENCY_WIDTH:
+                    synth.frequencyWidth = data2;
+                    break;
                 case MIDI_CONTROL_PULSEWIDTH:
                     synth.instrument.pulseWidth = data2;
-                    break;
-                case MIDI_CONTROL_WAVEFORM:
-                    switch (data2 >> 4) {
-                        case 0:
-                            synth.instrument.control = VOICE_PULSE;
-                            break;
-                        case 1:
-                            synth.instrument.control = VOICE_TRIANGE;
-                            break;
-                        case 2:
-                            synth.instrument.control = VOICE_SAWTOOTH;
-                            break;
-                        case 3:
-                            synth.instrument.control = VOICE_NOISE;
-                            break;
-                        case 4:
-                            synth.instrument.control = VOICE_RINGMOD;
-                            break;
-                    }
                     break;
                 case MIDI_CONTROL_VOLUME:
                     writeSid(REGISTER_VOLUME, (synth.volume = data2 >> 3) );  // 0xxxxxxx -> 0000xxxx
                     break;
                 case MIDI_CONTROL_SUSTAIN:
-                    if ((synth.sustain = data2) != 0) {
+                    if ((synth.sustain = data2) == 0) {
                         setSustain();
                     } else {
                         releaseSustain();

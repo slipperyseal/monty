@@ -77,10 +77,9 @@
 #define MIDI_CONTROL_SUSTAIN               64
 #define MIDI_CONTROL_REVERB                91
 // monty effects
-#define MIDI_CONTROL_SKEW                  1
-#define MIDI_CONTROL_WAVEFORM              2
-#define MIDI_CONTROL_PULSEWIDTH            3
-#define MIDI_CONTROL_FREQUENCY_SCAN        4
+#define MIDI_CONTROL_PULSEWIDTH            2
+#define MIDI_CONTROL_FREQUENCY_SCAN        3
+#define MIDI_CONTROL_FREQUENCY_WIDTH       4
 
 struct bcm2835_peripheral {
     unsigned long addr_p;
@@ -116,6 +115,7 @@ struct Synth {
     int pitch;       // pitch wheel position
     int modulation;  // 64 = center
     int frequencyScan;
+    int frequencyWidth;
     int reverb;
     int sustain;
     int volume;
