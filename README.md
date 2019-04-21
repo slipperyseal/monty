@@ -11,6 +11,7 @@ A demo of the previous Raspberry Pi powered version (this version is still in th
 
 Pin wirings...
 
+~~~~
   AVR SID
 
   PC0 A0
@@ -33,19 +34,20 @@ Pin wirings...
   PB3 CS SID2 select (active low)
   PB4 D6
   PB5 D7
+~~~~
 
 Build instructions.. where YOUR_PROGRAMMER is the name of your programmer profile
 
 Fuse settings. Only needs to be done once. Set to use a 16mhz crystal..
 
-  avrdude -p atmega328 -c YOUR_PROGRAMMER -U lfuse:w:0xff:m hfuse:w:0xd9:m
+  `avrdude -p atmega328 -c YOUR_PROGRAMMER -U lfuse:w:0xff:m hfuse:w:0xd9:m`
 
 Compiling...
 
-  avr-gcc -g -Os -mmcu=atmega328 -c monty.c 
-  avr-gcc -g -mmcu=atmega328 -o monty.elf monty.o
+  `avr-gcc -g -Os -mmcu=atmega328 -c monty.c` 
+  `avr-gcc -g -mmcu=atmega328 -o monty.elf monty.o`
 
 AVR Programming...
 
-  avrdude -p atmega328 -c YOUR_PROGRAMMER -U flash:w:monty.elf 
+  `avrdude -p atmega328 -c YOUR_PROGRAMMER -U flash:w:monty.elf` 
 
