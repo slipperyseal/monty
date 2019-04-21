@@ -2,19 +2,13 @@
 #ifndef _MONTY_H
 #define _MONTY_H
 
-#define BCM2708_PERI_BASE       0x20000000
-#define GPIO_BASE               (BCM2708_PERI_BASE + 0x200000)
-#define GPIO_TIMER              (BCM2708_PERI_BASE + 0x003000)
-#define GPIO_CLOCK              (BCM2708_PERI_BASE + 0x00101000)
-#define TIMER_OFFSET            (4)
-#define GPIO_BLOCK_SIZE         (4*1024)
-#define GPIO_CLOCK_BLOCK_SIZE   32
-#define GPIO_TIMER_BLOCK_SIZE   64
-#define BCM_PASSWORD            0x5A000000
-#define GPIO_CLOCK_SOURCE       1
-#define TIMER_CONTROL           (0x408 >> 2)
-#define TIMER_IRQ_RAW           (0x410 >> 2)
-#define TIMER_PRE_DIV           (0x41C >> 2)
+#define TOTAL_SIDS                 2 
+#define TOTAL_VOICES               (TOTAL_SIDS*3)
+
+#define NO_OP16() asm volatile("nop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n"::);
+
+#define USART_BAUDRATE 31250 // MIDI baud rate 
+#define BAUD_PRESCALE (((F_CPU/(USART_BAUDRATE*16UL)))-1)
 
 #define VOICE_NOISE  128
 #define VOICE_PULSE  64
@@ -24,10 +18,9 @@
 #define VOICE_RINGMOD 4
 #define VOICE_SYNC 2
 #define VOICE_GATE 1 // not to be included in Instrument definitions
-
 #define VOICE_CLOSEGATE 254
 
-// register groups offset at SID addresses 0,7 and 14
+#define REGISTER_GROUP_OFFSET 7
 #define REGISTER_FREQ_LO 0
 #define REGISTER_FREQ_HI 1
 #define REGISTER_PW_LO   2
@@ -44,18 +37,17 @@
 
 #define SID_HZ 1000000
 
-#define CS  18
-#define RW  0
-#define RES 0
-#define CLK 4
+#define SID_CS_LEFT    (1<<2) // right high 
+#define SID_CS_RIGHT   (1<<3) // left high 
+#define SID_CS_BOTH    0      // both low
+#define SID_CS_CLEAR   SID_CS_LEFT | SID_CS_RIGHT // both high
+#define SID_RW    31
+#define SID_RESET 1
 
 #define SYNTH_KEY_CHANNEL          0
 #define SYNTH_PAD_CHANNEL          1
 
-#define TOTAL_VOICES               3
-
 #define MIDI_COMMANDBIT            128
-
 #define MIDI_NOTEOFF               8
 #define MIDI_NOTEON                9
 #define MIDI_POLYPHONICAFTERTOUCH  10
@@ -81,47 +73,40 @@
 #define MIDI_CONTROL_FREQUENCY_SCAN        3
 #define MIDI_CONTROL_FREQUENCY_WIDTH       4
 
-struct bcm2835_peripheral {
-    unsigned long addr_p;
-    int mem_fd;
-    void * map;
-    volatile unsigned int * addr;
-};
-
 struct Instrument {
-    int control;          // waveform control register
-    int filterFlags;	  // filter flags
-    int pulseWidth;		  // inital pulse width
-    int attackDecay;      // A/D
-    int sustainRelease;   // S/R
-    int freqCutoff;		  // filter cutoff
-    int resData;
-    int resMode;
-    int defaultModulation; // 0 = disable, [midi = chorus]
-    int velocityFunction;
+    uint8_t control;          // waveform control register
+    uint8_t filterFlags;	  // filter flags
+    uint16_t pulseWidth;		  // inital pulse width
+    uint8_t attackDecay;      // A/D
+    uint8_t sustainRelease;   // S/R
+    uint16_t freqCutoff;		  // filter cutoff
+    uint16_t resData;
+    uint16_t resMode;
+    uint16_t defaultModulation; // 0 = disable, [midi = chorus]
+    uint8_t velocityFunction;
 };
 
 struct Voice {
-    int offset;         // offset to the 3 identicle sets of voice registers (0, 7 or 14)
-    int key;
-    int velocity;
-    int sustain;        // sustain flag (voice wont be stopped until sustain cleared)
-    int frame;		    // frame counter for progressive effects
+    uint8_t offset;         // offset to the 3 identicle sets of voice registers (0, 7 or 14)
+    uint8_t sidSelect;
+    uint8_t key;
+    uint8_t velocity;
+    uint8_t sustain;        // sustain flag (voice wont be stopped until sustain cleared)
 };
 
 struct Synth {
-    int frame;
-    int channel;     // the channel we are listening for
-    int pitch;       // pitch wheel position
-    int modulation;  // 64 = center
-    int frequencyScan;
-    int frequencyWidth;
-    int reverb;
-    int sustain;
-    int volume;
-    int nextVoice;
     struct Instrument instrument;
-    struct Voice voiceTable[3];
+    struct Voice voiceTable[TOTAL_VOICES];
+    uint16_t frame;
+    uint16_t frequencyScan;
+    uint16_t frequencyWidth;
+    uint16_t reverb;
+    uint8_t channel;     // the channel we are listening for
+    uint8_t pitch;       // pitch wheel position
+    uint8_t modulation;  // 64 = center
+    uint8_t sustain;
+    uint8_t volume;
+    uint8_t nextVoice;
 };
 
 #endif
