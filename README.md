@@ -45,6 +45,7 @@ Fuse settings. Only needs to be done once. Set to use a 16mhz crystal..
 Compiling...
 
   `avr-gcc -g -Os -mmcu=atmega328 -c monty.c` 
+
   `avr-gcc -g -mmcu=atmega328 -o monty.elf monty.o`
 
 AVR Programming...
