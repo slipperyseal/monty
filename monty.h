@@ -41,7 +41,7 @@
 #define SID_CS_RIGHT   (1<<3) // left high 
 #define SID_CS_BOTH    0      // both low
 #define SID_CS_CLEAR   SID_CS_LEFT | SID_CS_RIGHT // both high
-#define SID_RW    31
+#define SID_RW_READ    32
 #define SID_RESET 1
 
 #define SYNTH_KEY_CHANNEL          0

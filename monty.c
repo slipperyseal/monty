@@ -19,12 +19,12 @@ uint8_t readSerial() {
 }
 
 void writeSid(uint8_t reg, uint8_t val, uint8_t sidSelect) {
-    PORTC = reg & SID_RW;   // A0-A4 + write
+    PORTC = reg;   // A0-A4 + (write low)
     PORTD = val << 2;       // D0-D5
-    val = (val >> 2) & ((1<<4)|(1<<5)) | SID_RESET;
-    PORTB = val | sidSelect;
+    uint8_t valueb = (val >> 2) & ((1<<4)|(1<<5)) | SID_RESET;
+    PORTB = valueb | sidSelect;
     NO_OP16()
-    PORTB = val | SID_CS_CLEAR;
+    PORTB = valueb | SID_CS_CLEAR;
 }
 
 void setVolume(uint8_t volume) {
