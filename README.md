@@ -3,7 +3,7 @@ monty
 
 Commodore 64 Stereo 6581 SID Synth
 
-Monty is a MIDI synth controller for the ATmega328p which drives up to 2 6581 SID chips.
+Monty is a MIDI synth controller for the ATmega1284p which drives up to 2 6581 SID chips.
 
 A demo of the previous Raspberry Pi powered version (this version is still in the commit history)..
 
@@ -12,6 +12,8 @@ A demo of the previous Raspberry Pi powered version (this version is still in th
 Pin wirings...
 
 ~~~~
+  These are the 328p pins. todo: update for 1284p..
+  
   AVR SID
 
   PC0 A0
@@ -36,19 +38,17 @@ Pin wirings...
   PB5 D7
 ~~~~
 
-Build instructions.. where YOUR_PROGRAMMER is the name of your programmer profile
+Fuse settings. Only needs to be done once. Sets the AVR to use a 16mhz external crystal, and very importantly disable JTAG as we need those pins..
 
-Fuse settings. Only needs to be done once. Set to use a 16mhz crystal..
-
-  `avrdude -p atmega328 -c YOUR_PROGRAMMER -U lfuse:w:0xff:m hfuse:w:0xd9:m`
+  `avrdude -p m1284p -c pi -U lfuse:w:0xff:m -U hfuse:w:0xd9:m`
 
 Compiling...
 
-  `avr-gcc -g -Os -mmcu=atmega328 -c monty.c` 
-
-  `avr-gcc -g -mmcu=atmega328 -o monty.elf monty.o`
+  `avr-gcc -g -Os -mmcu=atmega1284p -c monty.cpp`
+  
+  `avr-gcc -g -mmcu=atmega1284p -o monty.elf monty.o` 
 
 AVR Programming...
 
-  `avrdude -p atmega328 -c YOUR_PROGRAMMER -U flash:w:monty.elf` 
+  `avrdude -p m1284p -c pi -U flash:w:monty.elf`
 

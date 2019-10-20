@@ -2,13 +2,17 @@
 #ifndef _MONTY_H
 #define _MONTY_H
 
+#define SID_VOICES                 3 
 #define TOTAL_SIDS                 2 
-#define TOTAL_VOICES               (TOTAL_SIDS*3)
+#define TOTAL_VOICES               (TOTAL_SIDS*SID_VOICES)
 
 #define NO_OP16() asm volatile("nop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n"::);
 
 #define USART_BAUDRATE 31250 // MIDI baud rate 
 #define BAUD_PRESCALE (((F_CPU/(USART_BAUDRATE*16UL)))-1)
+
+#define USART_BAUDRATE2 9600 
+#define BAUD_PRESCALE2 (((F_CPU/(USART_BAUDRATE2*16UL)))-1)
 
 #define VOICE_NOISE  128
 #define VOICE_PULSE  64
@@ -37,13 +41,20 @@
 
 #define SID_HZ 1000000
 
-#define SID_CS_LEFT    (1<<2) // right high 
-#define SID_CS_RIGHT   (1<<3) // left high 
+// PORT A
+#define SID_CS_LEFT    (1<<7) // right high 
+#define SID_CS_RIGHT   (1<<6) // left high 
 #define SID_CS_BOTH    0      // both low
-#define SID_CS_CLEAR   SID_CS_LEFT | SID_CS_RIGHT // both high
-#define SID_RW_READ    32
-#define SID_RESET 1
+#define SID_CS_CLEAR   (SID_CS_LEFT | SID_CS_RIGHT) // both high
+#define SID_RW_READ    (1<<5) 
+// PORT D
+#define SID_RESET      (1<<1) 
+#define BUTTON_1       (1<<4)
+#define BUTTON_2       (1<<5)
+#define BUTTON_3       (1<<6)
+#define BUTTON_ALL     (BUTTON_1 | BUTTON_2 | BUTTON_3)
 
+#define SYNTH_ALL_CHANNEL          0xff
 #define SYNTH_KEY_CHANNEL          0
 #define SYNTH_PAD_CHANNEL          1
 
@@ -73,30 +84,40 @@
 #define MIDI_CONTROL_FREQUENCY_SCAN        3
 #define MIDI_CONTROL_FREQUENCY_WIDTH       4
 
-struct Instrument {
+class Instrument {
+public:
     uint8_t control;          // waveform control register
     uint8_t filterFlags;	  // filter flags
-    uint16_t pulseWidth;		  // inital pulse width
+    uint16_t pulseWidth;      // inital pulse width
     uint8_t attackDecay;      // A/D
     uint8_t sustainRelease;   // S/R
-    uint16_t freqCutoff;		  // filter cutoff
+    uint16_t freqCutoff;	  // filter cutoff
     uint16_t resData;
     uint16_t resMode;
     uint16_t defaultModulation; // 0 = disable, [midi = chorus]
     uint8_t velocityFunction;
+    
+    void setDefaults();
 };
 
-struct Voice {
+class Voice {
+public:
     uint8_t offset;         // offset to the 3 identicle sets of voice registers (0, 7 or 14)
     uint8_t sidSelect;
     uint8_t key;
     uint8_t velocity;
     uint8_t sustain;        // sustain flag (voice wont be stopped until sustain cleared)
+
+    uint16_t getSidFrequency(float note);
+    void updateVoice();
+    void setNoteOn(uint8_t key, uint8_t velocity);
+    void setVoiceOff();
 };
 
-struct Synth {
-    struct Instrument instrument;
-    struct Voice voiceTable[TOTAL_VOICES];
+class Synth {
+public:
+    Instrument instrument;
+    Voice voices[TOTAL_VOICES];
     uint16_t frame;
     uint16_t frequencyScan;
     uint16_t frequencyWidth;
@@ -107,6 +128,19 @@ struct Synth {
     uint8_t sustain;
     uint8_t volume;
     uint8_t nextVoice;
+
+    void resetSid();
+    void writeSid(uint8_t reg, uint8_t val, uint8_t sidSelect);
+    void setVolume(uint8_t volume);
+    Voice * findVoice();
+    void setNoteOff(uint8_t key);
+    void setSustain();
+    void releaseSustain();
+    void setupVoices();
+    void setupSynth();
+    void updateVoices();
+    void injectMidi();
+    void playSample();
 };
 
 #endif
