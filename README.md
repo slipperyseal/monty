@@ -23,15 +23,13 @@ A demo of the previous Raspberry Pi powered version (this version is still in th
 
 Fuse settings. These only needs to be done once. Sets the AVR to use a 16mhz external crystal, and very importantly disable JTAG as we need those pins..
 
-  `avrdude -p m1284p -c pi -U lfuse:w:0xff:m -U hfuse:w:0xd9:m`
+  `avrdude -p m1284p -c YOURPROGAMMER -U lfuse:w:0xff:m -U hfuse:w:0xd9:m`
 
 Compiling...
 
-  `avr-gcc -g -Os -mmcu=atmega1284p -c monty.cpp`
-  
-  `avr-gcc -g -mmcu=atmega1284p -o monty.elf monty.o` 
+  `make`
 
 AVR Programming...
 
-  `avrdude -p m1284p -c YOURPROGAMMER -U flash:w:monty.elf`
+  `avrdude -p m1284p -c YOURPROGAMMER -U flash:w:monty.hex`
 

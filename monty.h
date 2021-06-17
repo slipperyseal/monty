@@ -6,13 +6,18 @@
 #define TOTAL_SIDS                 2 
 #define TOTAL_VOICES               (TOTAL_SIDS*SID_VOICES)
 
+#define USART_BAUDRATE_0 31250 // MIDI baud rate 
+#define BAUD_PRESCALE_0 (((F_CPU/(USART_BAUDRATE_0*16UL)))-1)
+
+#define USART_BAUDRATE_1 9600 
+#define BAUD_PRESCALE_1 (((F_CPU/(USART_BAUDRATE_1*16UL)))-1)
+
+#define FRAMES_PER_SECOND	32UL
+#define ISR_COUNTER  	(65536 - (F_CPU/1024UL/FRAMES_PER_SECOND))
+
+#define SID_HZ 1000000
+
 #define NO_OP16() asm volatile("nop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n"::);
-
-#define USART_BAUDRATE 31250 // MIDI baud rate 
-#define BAUD_PRESCALE (((F_CPU/(USART_BAUDRATE*16UL)))-1)
-
-#define USART_BAUDRATE2 9600 
-#define BAUD_PRESCALE2 (((F_CPU/(USART_BAUDRATE2*16UL)))-1)
 
 #define VOICE_NOISE  128
 #define VOICE_PULSE  64
@@ -39,20 +44,33 @@
 #define PULSEWIDTH_VELOCITY 1
 #define PULSEWIDTH_SWEEP 2
 
-#define SID_HZ 1000000
-
 // PORT A
 #define SID_CS_LEFT    (1<<7) // right high 
 #define SID_CS_RIGHT   (1<<6) // left high 
 #define SID_CS_BOTH    0      // both low
 #define SID_CS_CLEAR   (SID_CS_LEFT | SID_CS_RIGHT) // both high
-#define SID_RW_READ    (1<<5) 
+#define SID_RW_READ    (1<<5)
+
+// PORTB
+//#define LED_INVERT			// for common cathode 7 seg displays
+ 
 // PORT D
-#define SID_RESET      (1<<1) 
+#define SID_RESET      (1<<1)
+#define STATUS_PIN_0   (1<<2) // status pins when UART1 disabled
+#define STATUS_PIN_1   (1<<3) 
 #define BUTTON_1       (1<<4)
 #define BUTTON_2       (1<<5)
 #define BUTTON_3       (1<<6)
 #define BUTTON_ALL     (BUTTON_1 | BUTTON_2 | BUTTON_3)
+
+#define  SEG_A  (1<<0)
+#define  SEG_B  (1<<1)
+#define  SEG_C  (1<<2)
+#define  SEG_D  (1<<3)
+#define  SEG_E  (1<<4)
+#define  SEG_F  (1<<5)
+#define  SEG_G  (1<<6)
+#define  SEG_DP (1<<7)
 
 #define SYNTH_ALL_CHANNEL          0xff
 #define SYNTH_KEY_CHANNEL          0
@@ -91,6 +109,8 @@ public:
     uint16_t pulseWidth;      // inital pulse width
     uint8_t attackDecay;      // A/D
     uint8_t sustainRelease;   // S/R
+    uint8_t sineAmplitude;
+    uint8_t sineWidth;
     uint16_t freqCutoff;	  // filter cutoff
     uint16_t resData;
     uint16_t resMode;
@@ -108,7 +128,6 @@ public:
     uint8_t velocity;
     uint8_t sustain;        // sustain flag (voice wont be stopped until sustain cleared)
 
-    uint16_t getSidFrequency(float note);
     void updateVoice();
     void setNoteOn(uint8_t key, uint8_t velocity);
     void setVoiceOff();
@@ -122,14 +141,15 @@ public:
     uint16_t frequencyScan;
     uint16_t frequencyWidth;
     uint16_t reverb;
-    uint8_t channel;     // the channel we are listening for
+    uint8_t channel;     // MIDI channel to respond to or SYNTH_ALL_CHANNEL
     uint8_t pitch;       // pitch wheel position
     uint8_t modulation;  // 64 = center
     uint8_t sustain;
     uint8_t volume;
     uint8_t nextVoice;
 
-    void resetSid();
+    Synth();
+    void initSids();
     void writeSid(uint8_t reg, uint8_t val, uint8_t sidSelect);
     void setVolume(uint8_t volume);
     Voice * findVoice();
@@ -137,10 +157,101 @@ public:
     void setSustain();
     void releaseSustain();
     void setupVoices();
-    void setupSynth();
     void updateVoices();
     void injectMidi();
     void playSample();
+
+private:
+    void sampleDelay();
+};
+
+class Uart0 {
+public:
+    Uart0();
+	uint8_t read();
+};
+
+class Uart1 {
+public:
+    Uart1();
+	uint8_t read();
+};
+
+class SidClock {
+public:
+	SidClock();
+};
+
+class SevenSeg {
+public:
+	SevenSeg();
+    uint8_t getFontValue(uint8_t value);
+    uint8_t scrollDown2(uint8_t value);
+    uint8_t scrollDown1(uint8_t value);
+    uint8_t scrollUp1(uint8_t value);
+    uint8_t scrollUp2(uint8_t value);
+	void update(uint8_t value);
+	void updateFont(uint8_t value);
+	void updateNumeric(uint8_t value);
+};
+
+class Button {
+public:
+    Button(uint8_t bitmask);
+
+	uint8_t bit;
+	bool down;
+	bool changed;
+	
+    void poll();
+    bool pressed();
+    bool released();
+};
+
+class Knob {
+public:
+    uint8_t label;
+    uint8_t* location;
+    bool upperNibble;
+
+    Knob(uint8_t la, uint8_t* lo, bool un) {
+		label = la;
+		location = lo;
+		upperNibble = un;
+    }
+    uint8_t get();
+    void set(uint8_t value);
+};
+
+class Menu {
+public:
+    SevenSeg sevenSeg;
+    Button buttonA;
+    Button buttonB;
+    Button buttonC;
+	Knob* knobs;
+	uint8_t knobCount;
+	uint8_t selectedKnob;
+	bool edit;
+	uint8_t flash;	
+	uint8_t anim;
+	uint8_t animData[4];
+
+    Menu();
+	void update();
+};
+
+class Monty {
+public:
+    SidClock sidClock;
+    Uart0 uartMidi;
+//    Uart1 uartControl;
+    Menu menu;
+    Synth synth;
+
+    Monty();
+    void initIsr();
+    void run();
 };
 
 #endif
