@@ -12,8 +12,8 @@
 #define USART_BAUDRATE_1 9600 
 #define BAUD_PRESCALE_1 (((F_CPU/(USART_BAUDRATE_1*16UL)))-1)
 
-#define FRAMES_PER_SECOND	32UL
-#define ISR_COUNTER  	(65536 - (F_CPU/1024UL/FRAMES_PER_SECOND))
+#define FRAMES_PER_SECOND    32UL
+#define ISR_COUNTER      (65536 - (F_CPU/1024UL/FRAMES_PER_SECOND))
 
 #define SID_HZ 1000000
 
@@ -52,7 +52,7 @@
 #define SID_RW_READ    (1<<5)
 
 // PORTB
-//#define LED_INVERT			// for common cathode 7 seg displays
+//#define LED_INVERT            // for common cathode 7 seg displays
  
 // PORT D
 #define SID_RESET      (1<<1)
@@ -105,13 +105,13 @@
 class Instrument {
 public:
     uint8_t control;          // waveform control register
-    uint8_t filterFlags;	  // filter flags
+    uint8_t filterFlags;      // filter flags
     uint16_t pulseWidth;      // inital pulse width
     uint8_t attackDecay;      // A/D
     uint8_t sustainRelease;   // S/R
     uint8_t sineAmplitude;
     uint8_t sineWidth;
-    uint16_t freqCutoff;	  // filter cutoff
+    uint16_t freqCutoff;      // filter cutoff
     uint16_t resData;
     uint16_t resMode;
     uint16_t defaultModulation; // 0 = disable, [midi = chorus]
@@ -168,41 +168,41 @@ private:
 class Uart0 {
 public:
     Uart0();
-	uint8_t read();
+    uint8_t read();
 };
 
 class Uart1 {
 public:
     Uart1();
-	uint8_t read();
+    uint8_t read();
 };
 
 class SidClock {
 public:
-	SidClock();
+    SidClock();
 };
 
 class SevenSeg {
 public:
-	SevenSeg();
+    SevenSeg();
     uint8_t getFontValue(uint8_t value);
     uint8_t scrollDown2(uint8_t value);
     uint8_t scrollDown1(uint8_t value);
     uint8_t scrollUp1(uint8_t value);
     uint8_t scrollUp2(uint8_t value);
-	void update(uint8_t value);
-	void updateFont(uint8_t value);
-	void updateNumeric(uint8_t value);
+    void update(uint8_t value);
+    void updateFont(uint8_t value);
+    void updateNumeric(uint8_t value);
 };
 
 class Button {
 public:
     Button(uint8_t bitmask);
 
-	uint8_t bit;
-	bool down;
-	bool changed;
-	
+    uint8_t bit;
+    bool down;
+    bool changed;
+    
     void poll();
     bool pressed();
     bool released();
@@ -215,9 +215,9 @@ public:
     bool upperNibble;
 
     Knob(uint8_t la, uint8_t* lo, bool un) {
-		label = la;
-		location = lo;
-		upperNibble = un;
+        label = la;
+        location = lo;
+        upperNibble = un;
     }
     uint8_t get();
     void set(uint8_t value);
@@ -229,16 +229,16 @@ public:
     Button buttonA;
     Button buttonB;
     Button buttonC;
-	Knob* knobs;
-	uint8_t knobCount;
-	uint8_t selectedKnob;
-	bool edit;
-	uint8_t flash;	
-	uint8_t anim;
-	uint8_t animData[4];
+    Knob* knobs;
+    uint8_t knobCount;
+    uint8_t selectedKnob;
+    bool edit;
+    uint8_t flash;    
+    uint8_t anim;
+    uint8_t animData[4];
 
     Menu();
-	void update();
+    void update();
 };
 
 class Monty {

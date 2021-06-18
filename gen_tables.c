@@ -14,9 +14,9 @@
 //   ./gentables > tables.cpp
 //
 
-#define SID_ARRAY_NAME 	 "sid_frequency"
+#define SID_ARRAY_NAME      "sid_frequency"
 #define SUB_SEMITONES    16.0
-#define INDENT 	         "    "
+#define INDENT              "    "
 #define VALUES_PER_LINE  8
 
 #define SID_SCALER 985248.0
@@ -46,7 +46,7 @@ void sidTable() {
         count++;
         if (++col >= VALUES_PER_LINE) {
             printf("\r\n");
-		    printf(INDENT);
+            printf(INDENT);
             col = 0;
         }
         printf("0x%04x", c);
@@ -73,7 +73,7 @@ void sineTable() {
         count++;
         if (++col >= VALUES_PER_LINE) {
             printf("\r\n");
-		    printf(INDENT);
+            printf(INDENT);
             col = 0;
         }
         printf("0x%02x", c);

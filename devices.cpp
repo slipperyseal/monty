@@ -20,9 +20,9 @@ Uart0::Uart0() {
 }
 
 uint8_t Uart0::read() {
-	PORTD &=~STATUS_PIN_1;
+    PORTD &=~STATUS_PIN_1;
     while ((UCSR0A & (1 << RXC0)) == 0);
-	PORTD |= STATUS_PIN_1;
+    PORTD |= STATUS_PIN_1;
     return UDR0;
 }
 
@@ -55,12 +55,12 @@ uint8_t SevenSeg::getFontValue(uint8_t value) {
 }
 
 void SevenSeg::updateNumeric(uint8_t value) {
-	value &= 0xf;
-	updateFont((value < 0xa ? '0' : 'A'-0xa) + value);
+    value &= 0xf;
+    updateFont((value < 0xa ? '0' : 'A'-0xa) + value);
 }
 
 void SevenSeg::updateFont(uint8_t value) {
-	update(getFontValue(value));
+    update(getFontValue(value));
 }
 
 uint8_t SevenSeg::scrollDown2(uint8_t value) {
@@ -89,9 +89,9 @@ uint8_t SevenSeg::scrollUp2(uint8_t value) {
 
 void SevenSeg::update(uint8_t value) {
 #ifdef LED_INVERT
-	PORTB = ~value;
+    PORTB = ~value;
 #else
-	PORTB = value;
+    PORTB = value;
 #endif
 }
 
@@ -102,27 +102,27 @@ Button::Button(uint8_t bitmask) {
 }
 
 void Button::poll() {
-	bool down = (PIND & this->bit) == 0;
-	this->changed = down != this->down;
-	this->down = down;
+    bool down = (PIND & this->bit) == 0;
+    this->changed = down != this->down;
+    this->down = down;
 }
 
 bool Button::pressed() {
-	return this->changed && this->down;
+    return this->changed && this->down;
 }
 
 bool Button::released() {
-	return this->changed && !this->down;
+    return this->changed && !this->down;
 }
 
 uint8_t Knob::get() {
-	return this->upperNibble ? *this->location >> 4 : *this->location & 0x0f;
+    return this->upperNibble ? *this->location >> 4 : *this->location & 0x0f;
 }
 
 void Knob::set(uint8_t value) {
-	*this->location = this->upperNibble ?
-	    (*this->location & 0x0f) | value << 4 :
-	    (*this->location & 0xf0) | (value & 0x0f);
+    *this->location = this->upperNibble ?
+        (*this->location & 0x0f) | value << 4 :
+        (*this->location & 0xf0) | (value & 0x0f);
 }
 
 Menu::Menu() :
@@ -130,30 +130,30 @@ Menu::Menu() :
 }
 
 void Menu::update() {
-	this->buttonA.poll();
-	this->buttonB.poll();
-	this->buttonC.poll();
+    this->buttonA.poll();
+    this->buttonB.poll();
+    this->buttonC.poll();
 
     Knob * knob = &knobs[this->selectedKnob];
-	if (this->buttonB.pressed()) {
-		this->edit = !this->edit;
-	}
-	if (this->edit) {
-		uint8_t value = knob->get();
-		if (this->buttonA.pressed() && value > 0) {
-			knob->set(--value);
-		}
-		if (this->buttonC.pressed() && value < 0x0f) {
-			knob->set(++value);
-		}
-		this->sevenSeg.updateNumeric(value);
-	} else {
-		if (this->buttonA.pressed() && this->selectedKnob > 0) {
-			this->selectedKnob--;
-		}
-		if (this->buttonC.pressed() && this->selectedKnob < this->knobCount-1) {
-			this->selectedKnob++;
-		}
-		this->sevenSeg.updateFont(this->flash++ & 0b00001000 ? 0 : knob->label);
-	}
+    if (this->buttonB.pressed()) {
+        this->edit = !this->edit;
+    }
+    if (this->edit) {
+        uint8_t value = knob->get();
+        if (this->buttonA.pressed() && value > 0) {
+            knob->set(--value);
+        }
+        if (this->buttonC.pressed() && value < 0x0f) {
+            knob->set(++value);
+        }
+        this->sevenSeg.updateNumeric(value);
+    } else {
+        if (this->buttonA.pressed() && this->selectedKnob > 0) {
+            this->selectedKnob--;
+        }
+        if (this->buttonC.pressed() && this->selectedKnob < this->knobCount-1) {
+            this->selectedKnob++;
+        }
+        this->sevenSeg.updateFont(this->flash++ & 0b00001000 ? 0 : knob->label);
+    }
 }

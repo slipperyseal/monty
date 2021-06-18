@@ -17,18 +17,18 @@ extern const uint8_t max[7416] PROGMEM;
 Monty monty;
 
 Knob knobs[] = {
- 	{'A', &monty.synth.instrument.attackDecay, true },
- 	{'D', &monty.synth.instrument.attackDecay, false },
- 	{'S', &monty.synth.instrument.sustainRelease, true },
- 	{'R', &monty.synth.instrument.sustainRelease, false },
- 	{'H', &monty.synth.instrument.sineAmplitude, false },
- 	{'W', &monty.synth.instrument.sineWidth, false },
+    {'A', &monty.synth.instrument.attackDecay, true },
+    {'D', &monty.synth.instrument.attackDecay, false },
+    {'S', &monty.synth.instrument.sustainRelease, true },
+    {'R', &monty.synth.instrument.sustainRelease, false },
+    {'H', &monty.synth.instrument.sineAmplitude, false },
+    {'W', &monty.synth.instrument.sineWidth, false },
 };
 
 Synth::Synth() {
     DDRA = 0xFF;
     DDRC = 0xFF;
-	DDRD = 0xFF;//|= SID_RESET; todo: fix why this didnt work
+    DDRD = 0xFF;//|= SID_RESET; todo: fix why this didnt work
 
     this->initSids();
 
@@ -61,11 +61,11 @@ void Synth::initSids() {
     PORTA = SID_CS_CLEAR; // address and control bits
     PORTC = 0; // data bits
 
-	PORTD |= SID_RESET;
+    PORTD |= SID_RESET;
     _delay_ms(300);
-	PORTD &=~SID_RESET;
+    PORTD &=~SID_RESET;
     _delay_ms(300);
-	PORTD |= SID_RESET;
+    PORTD |= SID_RESET;
     _delay_ms(300);
 }
 
@@ -93,11 +93,11 @@ void Voice::updateVoice() {
     uint16_t note = this->key << 4;
     
     if (monty.synth.instrument.sineAmplitude) {
-		uint8_t frame = monty.synth.frame;
+        uint8_t frame = monty.synth.frame;
 
-		uint8_t w = frame << monty.synth.instrument.sineWidth;
-		int8_t s = pgm_read_byte_near(&sin_table[w*4]);
-		note += s >> monty.synth.instrument.sineAmplitude;
+        uint8_t w = frame << monty.synth.instrument.sineWidth;
+        int8_t s = pgm_read_byte_near(&sin_table[w*4]);
+        note += s >> monty.synth.instrument.sineAmplitude;
     }
     
     uint16_t freq = pgm_read_word_near(&sid_frequency[note]);
@@ -120,7 +120,7 @@ void Voice::setNoteOn(uint8_t key, uint8_t velocity) {
     }
     this->velocity = velocity;
 
-	cli();
+    cli();
     monty.synth.writeSid(this->offset + REGISTER_AD,
             (monty.synth.instrument.velocityFunction & VELOCITY_ATTACK) ?
                     (0xf - ((velocity>>3)<<4)) | (monty.synth.instrument.attackDecay & 0x0f) :
@@ -131,7 +131,7 @@ void Voice::setNoteOn(uint8_t key, uint8_t velocity) {
     this->updateVoice();
 
     monty.synth.writeSid(this->offset + REGISTER_CONTROL, monty.synth.instrument.control | VOICE_GATE, this->sidSelect);
-	sei();
+    sei();
 }
 
 void Voice::setVoiceOff() {
@@ -141,14 +141,14 @@ void Voice::setVoiceOff() {
 }
 
 void Synth::setNoteOff(uint8_t key) {
-	cli();
+    cli();
     for (uint8_t x=0;x<TOTAL_VOICES;x++) {
         Voice * voice = &this->voices[x];
         if (voice->key == key) {
             voice->setVoiceOff();
         }
     }
-	sei();
+    sei();
 }
 
 void Synth::setSustain() {
@@ -296,34 +296,34 @@ void Synth::playSample() {
 }
 
 ISR (TIMER1_OVF_vect) {
- 	TCNT1 = ISR_COUNTER;
+     TCNT1 = ISR_COUNTER;
 
-	PORTD |= STATUS_PIN_0;
+    PORTD |= STATUS_PIN_0;
 
-	monty.synth.frame++;
-	monty.synth.updateVoices();
-	monty.menu.update();
+    monty.synth.frame++;
+    monty.synth.updateVoices();
+    monty.menu.update();
 
-	PORTD &=~STATUS_PIN_0;
+    PORTD &=~STATUS_PIN_0;
 }
 
 Monty::Monty() {
-	this->menu.knobs = knobs;
-	this->menu.knobCount = (sizeof(knobs)/sizeof(Knob));
+    this->menu.knobs = knobs;
+    this->menu.knobCount = (sizeof(knobs)/sizeof(Knob));
 
-	this->initIsr();
-	sei();
+    this->initIsr();
+    sei();
 }
 
 void Monty::initIsr() {
-	TCNT1 = ISR_COUNTER;
-	TCCR1A = 0x00;
-	TCCR1B = (1<<CS10) | (1<<CS12);  // Timer mode with 1024 prescaler
-	TIMSK1 = (1 << TOIE1) ;   // Enable timer1 overflow interrupt(TOIE1)
+    TCNT1 = ISR_COUNTER;
+    TCCR1A = 0x00;
+    TCCR1B = (1<<CS10) | (1<<CS12);  // Timer mode with 1024 prescaler
+    TIMSK1 = (1 << TOIE1) ;   // Enable timer1 overflow interrupt(TOIE1)
 }
 
 void Monty::run() {
-	for (;;) {
+    for (;;) {
         this->synth.injectMidi();
     }
 }
