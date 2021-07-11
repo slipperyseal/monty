@@ -11,6 +11,7 @@
 #include "monty.h"
 
 extern const uint8_t font[128] PROGMEM;
+extern Monty monty;
 
 Uart0::Uart0() {
     UCSR0B |= 1<<RXEN0;
@@ -133,6 +134,19 @@ void Menu::update() {
     this->buttonA.poll();
     this->buttonB.poll();
     this->buttonC.poll();
+
+    if (this->timeout == 0) {
+        if (this->buttonA.pressed() || this->buttonB.pressed() || this->buttonC.pressed()) {
+            // reset the timeout. ignore this first press.
+            this->timeout = FRAMES_PER_SECOND*10;
+        } else {
+            // if menus are not being used (no buttons have been pressed in a while), mirror voice status to the 7 seg
+            this->sevenSeg.update(monty.synth.getVoiceOnBits());
+        }
+        return;
+    } else {
+        this->timeout--;
+    }
 
     Knob * knob = &knobs[this->selectedKnob];
     if (this->buttonB.pressed()) {

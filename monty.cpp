@@ -180,6 +180,16 @@ void Synth::setupVoices() {
     }
 }
 
+uint8_t Synth::getVoiceOnBits() {
+    uint8_t bits=0;
+    for (uint8_t i=0;i<TOTAL_VOICES;i++) {
+        if (this->voices[i].velocity != 0) {
+            bits |= (1<<i);
+        }
+    }
+    return bits;
+}
+
 void Instrument::setDefaults() {
     this->control = VOICE_TRIANGE;
     this->attackDecay = 0x2c;

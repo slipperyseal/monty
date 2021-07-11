@@ -157,6 +157,7 @@ public:
     void setSustain();
     void releaseSustain();
     void setupVoices();
+    uint8_t getVoiceOnBits();
     void updateVoices();
     void injectMidi();
     void playSample();
@@ -234,8 +235,7 @@ public:
     uint8_t selectedKnob;
     bool edit;
     uint8_t flash;    
-    uint8_t anim;
-    uint8_t animData[4];
+    uint16_t timeout;
 
     Menu();
     void update();
