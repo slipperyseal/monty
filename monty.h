@@ -2,27 +2,34 @@
 #ifndef _MONTY_H
 #define _MONTY_H
 
-#define SID_VOICES                 3 
-#define TOTAL_SIDS                 2 
+#define SID_VOICES                 3
+#define TOTAL_SIDS                 2 // total SIDs in your Monty. valid values are 1 and 2
 #define TOTAL_VOICES               (TOTAL_SIDS*SID_VOICES)
+//#define DOM_MODE    // compile for Dom mode which will echo midi to UART1 and ignore half the channels
+//#define GIMP_MODE   // compile for Gimp mode which read from UART1 and ignore half the channels
+//todo: make this a runtime option, perhaps even self detect the gimp
+
+#define SID_HZ 1000000
 
 #define USART_BAUDRATE_0 31250 // MIDI baud rate 
 #define BAUD_PRESCALE_0 (((F_CPU/(USART_BAUDRATE_0*16UL)))-1)
 
-#define USART_BAUDRATE_1 9600 
+#define USART_BAUDRATE_1 31250
 #define BAUD_PRESCALE_1 (((F_CPU/(USART_BAUDRATE_1*16UL)))-1)
 
-#define FRAMES_PER_SECOND    32UL
-#define ISR_COUNTER      (65536 - (F_CPU/1024UL/FRAMES_PER_SECOND))
-
-#define SID_HZ 1000000
+#define FRAMES_PER_SECOND  32UL
+#define ISR_COUNTER        (65536-(F_CPU/1024UL/FRAMES_PER_SECOND))
 
 #define NO_OP16() asm volatile("nop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n"::);
+
+// cli and sei replacements with questional taste in music
+#define CLI()   const uint8_t dontStopBelievinHoldOnToThatFeelin = SREG; cli();
+#define SEI()   SREG = dontStopBelievinHoldOnToThatFeelin;
 
 #define VOICE_NOISE  128
 #define VOICE_PULSE  64
 #define VOICE_SAWTOOTH 32
-#define VOICE_TRIANGE 16
+#define VOICE_TRIANGLE 16
 #define VOICE_TEST 8 // not to be included in Instrument definitions
 #define VOICE_RINGMOD 4
 #define VOICE_SYNC 2
@@ -49,10 +56,10 @@
 #define SID_CS_RIGHT   (1<<6) // left high 
 #define SID_CS_BOTH    0      // both low
 #define SID_CS_CLEAR   (SID_CS_LEFT | SID_CS_RIGHT) // both high
-#define SID_RW_READ    (1<<5)
+#define SID_RW_READ    (1<<5) // read/write line is connected to GPIO even though we only ever write
 
 // PORTB
-//#define LED_INVERT            // for common cathode 7 seg displays
+//#define LED_INVERT   // common cathode 7 seg displays will need the bits inverted
  
 // PORT D
 #define SID_RESET      (1<<1)
@@ -63,18 +70,16 @@
 #define BUTTON_3       (1<<6)
 #define BUTTON_ALL     (BUTTON_1 | BUTTON_2 | BUTTON_3)
 
-#define  SEG_A  (1<<0)
-#define  SEG_B  (1<<1)
-#define  SEG_C  (1<<2)
-#define  SEG_D  (1<<3)
-#define  SEG_E  (1<<4)
-#define  SEG_F  (1<<5)
-#define  SEG_G  (1<<6)
-#define  SEG_DP (1<<7)
+#define SEG_A  (1<<0)
+#define SEG_B  (1<<1)
+#define SEG_C  (1<<2)
+#define SEG_D  (1<<3)
+#define SEG_E  (1<<4)
+#define SEG_F  (1<<5)
+#define SEG_G  (1<<6)
+#define SEG_DP (1<<7)
 
 #define SYNTH_ALL_CHANNEL          0xff
-#define SYNTH_KEY_CHANNEL          0
-#define SYNTH_PAD_CHANNEL          1
 
 #define MIDI_COMMANDBIT            128
 #define MIDI_NOTEOFF               8
@@ -106,7 +111,7 @@ class Instrument {
 public:
     uint8_t control;          // waveform control register
     uint8_t filterFlags;      // filter flags
-    uint16_t pulseWidth;      // inital pulse width
+    uint16_t pulseWidth;      // initial pulse width
     uint8_t attackDecay;      // A/D
     uint8_t sustainRelease;   // S/R
     uint8_t sineAmplitude;
@@ -122,7 +127,7 @@ public:
 
 class Voice {
 public:
-    uint8_t offset;         // offset to the 3 identicle sets of voice registers (0, 7 or 14)
+    uint8_t offset;         // offset to the 3 identical sets of voice registers (0, 7 or 14)
     uint8_t sidSelect;
     uint8_t key;
     uint8_t velocity;
@@ -141,7 +146,7 @@ public:
     uint16_t frequencyScan;
     uint16_t frequencyWidth;
     uint16_t reverb;
-    uint8_t channel;     // MIDI channel to respond to or SYNTH_ALL_CHANNEL
+    uint8_t channel;     // MIDI channel to respond to or SYNTH_ALL_CHANNEL todo: make this a bitset
     uint8_t pitch;       // pitch wheel position
     uint8_t modulation;  // 64 = center
     uint8_t sustain;
@@ -176,6 +181,7 @@ class Uart1 {
 public:
     Uart1();
     uint8_t read();
+    void write(uint8_t data);
 };
 
 class SidClock {
@@ -244,8 +250,14 @@ public:
 class Monty {
 public:
     SidClock sidClock;
+#ifdef GIMP_MODE
+    Uart1 uartMidi;
+#else
     Uart0 uartMidi;
-//    Uart1 uartControl;
+#endif
+#ifdef DOM_MODE
+    Uart1 gimpMidi;
+#endif
     Menu menu;
     Synth synth;
 

@@ -5,9 +5,9 @@
 
 #include <avr/interrupt.h>
 #include <avr/io.h>
+#include <avr/pgmspace.h>
 #include <util/delay.h>
 #include <string.h>
-#include <avr/pgmspace.h>
 #include "monty.h"
 
 extern const uint16_t sid_frequency[] PROGMEM;
@@ -28,7 +28,7 @@ Knob knobs[] = {
 Synth::Synth() {
     DDRA = 0xFF;
     DDRC = 0xFF;
-    DDRD = 0xFF;//|= SID_RESET; todo: fix why this didnt work
+    DDRD = ~(1<<3)  ;//|= SID_RESET; todo: fix why this didnt work
 
     this->initSids();
 
@@ -44,13 +44,13 @@ Synth::Synth() {
 }
 
 void Synth::writeSid(uint8_t reg, uint8_t val, uint8_t sidSelect) {
-    reg &= 0b11111;
-
+    CLI() // disable interrupts (if not already in one) as the ISR will also be writing to the SIDs
     PORTC = val;
     PORTA = reg | sidSelect;
     NO_OP16()
     PORTA = reg | SID_CS_CLEAR;
     NO_OP16()
+    SEI()
 }
 
 void Synth::setVolume(uint8_t volume) {
@@ -120,18 +120,16 @@ void Voice::setNoteOn(uint8_t key, uint8_t velocity) {
     }
     this->velocity = velocity;
 
-    cli();
     monty.synth.writeSid(this->offset + REGISTER_AD,
             (monty.synth.instrument.velocityFunction & VELOCITY_ATTACK) ?
                     (0xf - ((velocity>>3)<<4)) | (monty.synth.instrument.attackDecay & 0x0f) :
-                    monty.synth.instrument.attackDecay, this->sidSelect );
+                    monty.synth.instrument.attackDecay, this->sidSelect);
     monty.synth.writeSid(this->offset + REGISTER_SR,
             monty.synth.instrument.sustainRelease, this->sidSelect);
 
     this->updateVoice();
 
     monty.synth.writeSid(this->offset + REGISTER_CONTROL, monty.synth.instrument.control | VOICE_GATE, this->sidSelect);
-    sei();
 }
 
 void Voice::setVoiceOff() {
@@ -141,14 +139,12 @@ void Voice::setVoiceOff() {
 }
 
 void Synth::setNoteOff(uint8_t key) {
-    cli();
     for (uint8_t x=0;x<TOTAL_VOICES;x++) {
         Voice * voice = &this->voices[x];
-        if (voice->key == key) {
+        if (voice->key == key && voice->velocity != 0) {
             voice->setVoiceOff();
         }
     }
-    sei();
 }
 
 void Synth::setSustain() {
@@ -191,7 +187,7 @@ uint8_t Synth::getVoiceOnBits() {
 }
 
 void Instrument::setDefaults() {
-    this->control = VOICE_TRIANGE;
+    this->control = VOICE_TRIANGLE;
     this->attackDecay = 0x2c;
     this->sustainRelease = 0x33;
     this->pulseWidth = 0xff;
@@ -214,25 +210,42 @@ void Synth::injectMidi() {
     uint8_t channel = command & 0x0f;
     uint8_t func = command >> 4;
 
+#ifdef GIMP_MODE
+    if ((channel & 1) == 0) {
+        return;
+    }
+#endif
+#ifdef DOM_MODE
+    if ((channel & 1) == 1) {
+        return;
+    }
+#endif
+
     if (this->channel != SYNTH_ALL_CHANNEL && this->channel != channel) {
         return;
     }
 
     if (this->channel == SYNTH_ALL_CHANNEL) {
-        // select a voice type based on the channel
-        switch (channel & 0x3) {
-            case 0:
-                this->instrument.control = VOICE_SAWTOOTH;
-                break;
-            case 1:
-                this->instrument.control = VOICE_TRIANGE;
-                break;
-            case 2:
-                this->instrument.control = VOICE_SAWTOOTH;
-                break;
-            case 3:
-                this->instrument.control = VOICE_TRIANGE;
-                break;
+        // select a voice waveform from the midi channel number
+        if (channel == 9) {
+            // drum channel
+            this->instrument.control = VOICE_NOISE;
+        } else {
+            // select a voice type based on the channel
+            switch (channel & 0x3) {
+                case 0:
+                    this->instrument.control = VOICE_SAWTOOTH;
+                    break;
+                case 1:
+                    this->instrument.control = VOICE_TRIANGLE;
+                    break;
+                case 2:
+                    this->instrument.control = VOICE_SAWTOOTH;
+                    break;
+                case 3:
+                    this->instrument.control = VOICE_TRIANGLE;
+                    break;
+            }
         }
     }
 
@@ -306,15 +319,15 @@ void Synth::playSample() {
 }
 
 ISR (TIMER1_OVF_vect) {
-     TCNT1 = ISR_COUNTER;
+    TCNT1 = ISR_COUNTER;
 
-    PORTD |= STATUS_PIN_0;
+    //PORTD |= STATUS_PIN_0; // set a GPIO so we can see the time in the ISR, on an oscilloscope
 
     monty.synth.frame++;
     monty.synth.updateVoices();
     monty.menu.update();
 
-    PORTD &=~STATUS_PIN_0;
+    //PORTD &=~STATUS_PIN_0;
 }
 
 Monty::Monty() {
@@ -328,8 +341,8 @@ Monty::Monty() {
 void Monty::initIsr() {
     TCNT1 = ISR_COUNTER;
     TCCR1A = 0x00;
-    TCCR1B = (1<<CS10) | (1<<CS12);  // Timer mode with 1024 prescaler
-    TIMSK1 = (1 << TOIE1) ;   // Enable timer1 overflow interrupt(TOIE1)
+    TCCR1B = (1<<CS10) | (1<<CS12);  // timer mode with 1024 prescaler
+    TIMSK1 = (1<<TOIE1);   // enable timer1 overflow interrupt
 }
 
 void Monty::run() {

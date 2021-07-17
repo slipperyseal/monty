@@ -21,14 +21,21 @@ Uart0::Uart0() {
 }
 
 uint8_t Uart0::read() {
-    PORTD &=~STATUS_PIN_1;
+    //PORTD &=~STATUS_PIN_1;
     while ((UCSR0A & (1 << RXC0)) == 0);
-    PORTD |= STATUS_PIN_1;
+    //PORTD |= STATUS_PIN_1; // set a GPIO so we can see the time not blocked on UART, on an oscilloscope
+
+#ifdef DOM_MODE
+    uint8_t value = UDR0;
+    monty.gimpMidi.write(value);
+    return value;
+#else
     return UDR0;
+#endif
 }
 
 Uart1::Uart1() {
-    UCSR1B |= 1<<RXEN0;
+    UCSR1B |= (1<<RXEN0) | (1<<TXEN0);
     UCSR1C |= (1<<UCSZ10) | (1<<UCSZ11);
     UBRR1H  = (BAUD_PRESCALE_1 >> 8);
     UBRR1L  = BAUD_PRESCALE_1;
@@ -37,6 +44,11 @@ Uart1::Uart1() {
 uint8_t Uart1::read() {
     while ((UCSR1A & (1 << RXC1)) == 0);
     return UDR1;
+}
+
+void Uart1::write(uint8_t data) {
+    while(((UCSR1A & (1<<UDRE1))==0)) { }
+    UDR1=data;
 }
 
 SidClock::SidClock() {
