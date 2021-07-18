@@ -33,7 +33,8 @@ Synth::Synth() {
     this->initSids();
 
     this->frequencyScan = 200;
-    this->channel = SYNTH_ALL_CHANNEL;
+    this->channels = SYNTH_ALL_CHANNELS;
+
     this->volume = 0xf;
     setVolume(this->volume);
 
@@ -106,7 +107,8 @@ void Voice::updateVoice() {
     monty.synth.writeSid(this->offset + REGISTER_FREQ_HI, (freq >> 8) & 0xff, this->sidSelect);
 
     if (monty.synth.instrument.control & VOICE_PULSE) {
-        uint16_t pw = (monty.synth.instrument.pulseWidth+1) << 5; // 7 bit > 12 bit number
+        //uint16_t pw = (monty.synth.instrument.pulseWidth+1) << 5; // 7 bit > 12 bit number
+        uint16_t pw = 500;
         monty.synth.writeSid(this->offset + REGISTER_PW_LO, pw & 0xff, this->sidSelect);
         monty.synth.writeSid(this->offset + REGISTER_PW_HI, (pw >> 8) & 0xff, this->sidSelect);
     }
@@ -144,6 +146,13 @@ void Synth::setNoteOff(uint8_t key) {
         if (voice->key == key && voice->velocity != 0) {
             voice->setVoiceOff();
         }
+    }
+}
+
+void Synth::setAllVoicesOff() {
+    for (uint8_t x=0;x<TOTAL_VOICES;x++) {
+        Voice * voice = &this->voices[x];
+        voice->setVoiceOff();
     }
 }
 
@@ -199,63 +208,55 @@ void Synth::updateVoices() {
     }
 }
 
+uint8_t Synth::readMidi() {
+    return monty.gimp ? monty.gimpMidi.read() : monty.uartMidi.read();
+}
+
 void Synth::injectMidi() {
-    uint8_t command = monty.uartMidi.read();
+    uint8_t command = this->readMidi();
+
     if (!(command & MIDI_COMMANDBIT)) {
         // out of sync with command. come back soon y'all
         return;
     }
-    uint8_t data1 = monty.uartMidi.read();
+    uint8_t data1 = this->readMidi();
     uint8_t data2;    
     uint8_t channel = command & 0x0f;
     uint8_t func = command >> 4;
 
-#ifdef GIMP_MODE
-    if ((channel & 1) == 0) {
-        return;
-    }
-#endif
-#ifdef DOM_MODE
-    if ((channel & 1) == 1) {
-        return;
-    }
-#endif
-
-    if (this->channel != SYNTH_ALL_CHANNEL && this->channel != channel) {
+    if (!((1 << channel) & this->channels)) {
         return;
     }
 
-    if (this->channel == SYNTH_ALL_CHANNEL) {
-        // select a voice waveform from the midi channel number
-        if (channel == 9) {
-            // drum channel
-            this->instrument.control = VOICE_NOISE;
-        } else {
-            // select a voice type based on the channel
-            switch (channel & 0x3) {
-                case 0:
-                    this->instrument.control = VOICE_SAWTOOTH;
-                    break;
-                case 1:
-                    this->instrument.control = VOICE_TRIANGLE;
-                    break;
-                case 2:
-                    this->instrument.control = VOICE_SAWTOOTH;
-                    break;
-                case 3:
-                    this->instrument.control = VOICE_TRIANGLE;
-                    break;
-            }
+    // select a voice waveform from the midi channel number
+    if (channel == 9) {
+        // drum channel
+        this->instrument.control = VOICE_NOISE;
+    } else {
+        // select a voice type based on the channel
+        switch (channel & 0x3) {
+            case 0:
+                this->instrument.control = VOICE_PULSE;
+                break;
+            case 1:
+                this->instrument.control = VOICE_TRIANGLE;
+                break;
+            case 2:
+                this->instrument.control = VOICE_SAWTOOTH;
+                break;
+            case 3:
+                this->instrument.control = VOICE_TRIANGLE;
+                break;
         }
     }
 
     switch (func) {
         case MIDI_NOTEOFF:
-            data2 = monty.uartMidi.read();
+            data2 = this->readMidi();
             setNoteOff(data1);
             break;
         case MIDI_NOTEON:
-            data2 = monty.uartMidi.read();
+            data2 = this->readMidi();
             if (data2 == 0) {
                 setNoteOff(data1);
             } else {
@@ -264,7 +265,7 @@ void Synth::injectMidi() {
             }
             break;
         case MIDI_CONTROL:
-            data2 = monty.uartMidi.read();
+            data2 = this->readMidi();
             switch (data1) {
                 case MIDI_CONTROL_MODULATION:
                     this->modulation = data2;
@@ -294,7 +295,7 @@ void Synth::injectMidi() {
             }
             break;
         case MIDI_PITCHWHEEL:
-            data2 = monty.uartMidi.read();
+            data2 = this->readMidi();
             this->pitch = ((data1 | (data2 << 8)) - 16384);
             updateVoices();
             break;
@@ -343,6 +344,16 @@ void Monty::initIsr() {
     TCCR1A = 0x00;
     TCCR1B = (1<<CS10) | (1<<CS12);  // timer mode with 1024 prescaler
     TIMSK1 = (1<<TOIE1);   // enable timer1 overflow interrupt
+}
+
+void Monty::enableDom() {
+    this->dom = true;
+    this->synth.channels = SYNTH_EVEN_CHANNELS;
+}
+
+void Monty::enableGimp() {
+    this->gimp = true;
+    this->synth.channels = SYNTH_ODD_CHANNELS;
 }
 
 void Monty::run() {

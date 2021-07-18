@@ -14,7 +14,7 @@ extern const uint8_t font[128] PROGMEM;
 extern Monty monty;
 
 Uart0::Uart0() {
-    UCSR0B |= 1<<RXEN0;
+    UCSR0B |= 1<<RXEN0;     // read only
     UCSR0C |= (1<<UCSZ00) | (1<<UCSZ01);
     UBRR0H  = (BAUD_PRESCALE_0 >> 8);
     UBRR0L  = BAUD_PRESCALE_0;
@@ -25,29 +25,27 @@ uint8_t Uart0::read() {
     while ((UCSR0A & (1 << RXC0)) == 0);
     //PORTD |= STATUS_PIN_1; // set a GPIO so we can see the time not blocked on UART, on an oscilloscope
 
-#ifdef DOM_MODE
     uint8_t value = UDR0;
-    monty.gimpMidi.write(value);
+    if (monty.dom) {
+        monty.gimpMidi.write(value);
+    }
     return value;
-#else
-    return UDR0;
-#endif
 }
 
 Uart1::Uart1() {
-    UCSR1B |= (1<<RXEN0) | (1<<TXEN0);
+    UCSR1B |= (1<<RXEN0) | (1<<TXEN0);  // read and write
     UCSR1C |= (1<<UCSZ10) | (1<<UCSZ11);
     UBRR1H  = (BAUD_PRESCALE_1 >> 8);
     UBRR1L  = BAUD_PRESCALE_1;
 }
 
 uint8_t Uart1::read() {
-    while ((UCSR1A & (1 << RXC1)) == 0);
+    while ((UCSR1A & (1<<RXC1)) == 0);
     return UDR1;
 }
 
 void Uart1::write(uint8_t data) {
-    while(((UCSR1A & (1<<UDRE1))==0)) { }
+    while (((UCSR1A & (1<<UDRE1)) == 0));
     UDR1=data;
 }
 
@@ -146,6 +144,19 @@ void Menu::update() {
     this->buttonA.poll();
     this->buttonB.poll();
     this->buttonC.poll();
+
+    if (this->buttonB.down) {
+        if (this->buttonA.pressed()) {
+            monty.enableDom();
+            monty.synth.setAllVoicesOff();
+            return;
+        } else if (this->buttonC.pressed()) {
+            // todo: broken. regular mode will be blocking on the wrong UART
+            monty.enableGimp();
+            monty.synth.setAllVoicesOff();
+            return;
+        }
+    }
 
     if (this->timeout == 0) {
         if (this->buttonA.pressed() || this->buttonB.pressed() || this->buttonC.pressed()) {

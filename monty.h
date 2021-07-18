@@ -5,9 +5,6 @@
 #define SID_VOICES                 3
 #define TOTAL_SIDS                 2 // total SIDs in your Monty. valid values are 1 and 2
 #define TOTAL_VOICES               (TOTAL_SIDS*SID_VOICES)
-//#define DOM_MODE    // compile for Dom mode which will echo midi to UART1 and ignore half the channels
-//#define GIMP_MODE   // compile for Gimp mode which read from UART1 and ignore half the channels
-//todo: make this a runtime option, perhaps even self detect the gimp
 
 #define SID_HZ 1000000
 
@@ -22,7 +19,7 @@
 
 #define NO_OP16() asm volatile("nop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n\tnop\n"::);
 
-// cli and sei replacements with questional taste in music
+// cli and sei replacements with questionable taste in music
 #define CLI()   const uint8_t dontStopBelievinHoldOnToThatFeelin = SREG; cli();
 #define SEI()   SREG = dontStopBelievinHoldOnToThatFeelin;
 
@@ -79,7 +76,9 @@
 #define SEG_G  (1<<6)
 #define SEG_DP (1<<7)
 
-#define SYNTH_ALL_CHANNEL          0xff
+#define SYNTH_ALL_CHANNELS          0b1111111111111111
+#define SYNTH_EVEN_CHANNELS         0b1010101010101010
+#define SYNTH_ODD_CHANNELS          0b0101010101010101
 
 #define MIDI_COMMANDBIT            128
 #define MIDI_NOTEOFF               8
@@ -146,7 +145,7 @@ public:
     uint16_t frequencyScan;
     uint16_t frequencyWidth;
     uint16_t reverb;
-    uint8_t channel;     // MIDI channel to respond to or SYNTH_ALL_CHANNEL todo: make this a bitset
+    uint16_t channels;   // MIDI channels to respond to
     uint8_t pitch;       // pitch wheel position
     uint8_t modulation;  // 64 = center
     uint8_t sustain;
@@ -164,6 +163,8 @@ public:
     void setupVoices();
     uint8_t getVoiceOnBits();
     void updateVoices();
+    void setAllVoicesOff();
+    uint8_t readMidi();
     void injectMidi();
     void playSample();
 
@@ -250,18 +251,16 @@ public:
 class Monty {
 public:
     SidClock sidClock;
-#ifdef GIMP_MODE
-    Uart1 uartMidi;
-#else
     Uart0 uartMidi;
-#endif
-#ifdef DOM_MODE
     Uart1 gimpMidi;
-#endif
     Menu menu;
     Synth synth;
+    bool dom;
+    bool gimp;
 
     Monty();
+    void enableDom();
+    void enableGimp();
     void initIsr();
     void run();
 };
