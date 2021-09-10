@@ -1,7 +1,6 @@
-monty
-=====
+# monty
 
-Commodore 64 Stereo 6581 SID Synth
+### Commodore 64 Stereo 6581 SID Synth
 
 Monty is a MIDI synth controller for the ATmega1284p which drives up to 2 6581 SID chips.
 
@@ -9,7 +8,7 @@ The software receives MIDI messages via UART (serial), tracking "note on", "note
 MIDI commands. Up to 2 SID chips can be controlled which totals 6 voices across 2 channels. Instrument definitions
 decide which of the SIDs voice types to use, which include pulse wave (with variable duty cycle), triangle wave,
 sawtooth wave, pseudorandom noise (white noise). The SID chips also contain a filter and ring modulator.
-As was common the Commodore 64, software can than apply arpeggios and other register manipulations to create more
+As was common the Commodore 64, software can then apply arpeggios and other register manipulations to create more
 textured sounds.
 
 By rapidly changing the volume level of the SID chip, sampled sound can be crudely played. On boot, Monty will
@@ -23,19 +22,21 @@ https://www.youtube.com/watch?v=tqf2bS5UaQM
 
 ![Monty](http://kamome.slipperyseal.net/monty-pcb1.jpg "Monty")
 
-Fuse settings. These only needs to be done once. Sets the AVR to use a 16mhz external crystal, and very importantly disable JTAG as we need those pins..
+#### Fuse settings
+
+These only needs to be done once. Sets the AVR to use a 16mhz external crystal, and very importantly disable JTAG as we need those pins..
 
   `avrdude -p m1284p -c YOURPROGAMMER -U lfuse:w:0xff:m -U hfuse:w:0xd9:m`
 
-Compiling...
+#### Compiling
 
   `make`
 
-AVR Programming...
+#### AVR Programming
 
   `avrdude -p m1284p -c YOURPROGAMMER -U flash:w:monty.hex`
 
-A breif history:
+## A breif history
 
 About a million years ago there was a personal computer called the Commodore 64. One of its revolutionary features for the time was a sound chip that was capable of more than simple beeps common in computers of the time.  The 6581 SID chip was a three voice analog synth with a range of selectable waveforms, multi mode filter and attack, decay, sustain and release envelopes normally only found in professional synthesisers. The unique sound of this chip has prompted the creation of highly accurate emulators, but if you are like me, you’ll agree nothing beats the real thing.  So at the turn of the century I was able to collect a bunch of SID chips from discarded Commodore 64s. Over the years I prototyped various versions of a SID based MIDI synthesizer. A device which receives MIDI commands and translates those the required register writes to a SID chip. 
 
@@ -49,11 +50,14 @@ A demo of the previous Raspberry Pi powered version. This is receiving SID regis
 
 https://www.youtube.com/watch?v=0jyIRRmpcOg
 
-How it works:
+## How it works
 
 An optocoupler receives and buffers the MIDI serial signal.  The MCU running the whole show is an Atmel AVR. I’ve had this working on 28 pin variants but I decided to go for the full 40 pin experience of the ATMega1284P. This helped simplify the IO and allowed me to add a 7 segment LED display and some keyswitches. So how do we control the SID chip itself? It’s pretty simple, luckily. The AVR and the SID use a standard 5 volt VCC. The original 6581 also requires a 12 volt rail while the newer 8580 chips wants 9 volts. The synth is powered by a 12 volt PSU and I’ve added a 5 and 9 volt regulator. The SID runs on a 1mhz clock. The audio oscillators in the chip are derived from this clock, so it’s important it’s exactly 1mhz. I run the AVR at 16mhz and program one of the GPIOs to emit a 1mhz square wave. Simples. The chip has an 8 bit data bus, a 5 bit address bus, a read/write mode pin and a chip select. Writes to the chip don’t need to be synced exactly to the 1mhz clock. As long as you write to the bus at least as long as one SID clock cycle, it’s happy. The code on the AVR sets up the address and data bus values on its GPIO, sets the chip select, waits with a few AVR No Op instructions, then clears the chip select. Of course both SIDs can sit on the same bus and will respond to their respective chip select pins.
 
-The software:
+## The software
 
 The main program loop listens for incoming MIDI commands from a UART. Voice objects represent the state of each of the three voices in each SID.  When a “Note On” MIDI command is received, the Voice objects are searched for one which is free. Should the tune have more polyphony (simultaneous notes playing) than voices, the oldest note playing is taken over. Values from the instrument object are set up on the SID voice via the appropriate registers and a note trigger bit is set. “Note Off” commands in turn mark the voice as available and trigger the voice to stop. Note that the SID chip has a proper attack, decay, sustain and release envelope which is all managed by the chip. No need to do anything fancy to make that work. Voice allocation is done round-robin which allows the voice’s envelope to ring out as long as possible. A common trick with game music on the Commodore 64 was to change certain values in the SID as notes were playing. Arpeggios were common (changing the notes of a single voice rapidly), pitch bends, even changing the waveform type itself. These effects are handled by an interrupt which fires 32 times a second (this is configurable).
 
+##### Gerber files for this PCB are included..
+
+![Monty](http://kamome.slipperyseal.net/monty-pcb.png "Monty PCB")
