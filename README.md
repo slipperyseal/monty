@@ -22,6 +22,13 @@ https://www.youtube.com/watch?v=tqf2bS5UaQM
 
 ![Monty](http://kamome.slipperyseal.net/monty-pcb1.jpg "Monty")
 
+Monty playing the Monty On The Run chip tune by Rob Hubbard.
+These chip tunes are 6502 processor code and binary data which actaully ran on the Commodore 64. But rather than try to sqeaze a 6502 emulator on the AVR, I cross assembled the play routine and data. I mapped 65 of the 6502s 151 instructions to AVR assembler, intercepted write the SID chip at $d4xx and handled one peice of self modifiying code. I got stuck for a while getting it to run properly, but then finally discovered for at least one instruction, the 6502s carry flag is set inversely to how it’s done on the AVR. Fun times.
+
+[![Monty](https://img.youtube.com/vi/i0d1r9NZg9I/0.jpg)](https://www.youtube.com/watch?v=i0d1r9NZg9I)
+
+https://www.youtube.com/watch?v=i0d1r9NZg9I
+
 #### Fuse settings
 
 These only needs to be done once. Sets the AVR to use a 16mhz external crystal, and very importantly disable JTAG as we need those pins..
