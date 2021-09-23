@@ -248,6 +248,13 @@ public:
     void update();
 };
 
+class ChipTune {
+public:
+    volatile bool active;
+    bool ready;
+    uint8_t song;
+};
+
 class Monty {
 public:
     SidClock sidClock;
@@ -255,6 +262,7 @@ public:
     Uart1 gimpMidi;
     Menu menu;
     Synth synth;
+    ChipTune chipTune;
     bool dom;
     bool gimp;
 

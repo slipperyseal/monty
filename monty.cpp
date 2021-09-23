@@ -14,6 +14,12 @@ extern const uint16_t sid_frequency[] PROGMEM;
 extern const uint8_t sin_table[] PROGMEM;
 extern const uint8_t max[7416] PROGMEM;
 
+// motr.avr.s
+extern "C" {
+    extern void sid_init(uint8_t song);
+    extern void sid_play();
+}
+
 Monty monty;
 
 Knob knobs[] = {
@@ -319,16 +325,33 @@ void Synth::playSample() {
     setVolume(0xf);
 }
 
-ISR (TIMER1_OVF_vect) {
-    TCNT1 = ISR_COUNTER;
-
-    //PORTD |= STATUS_PIN_0; // set a GPIO so we can see the time in the ISR, on an oscilloscope
+ISR(TIMER1_COMPA_vect) {
+    if (monty.chipTune.active) {
+        if (!monty.chipTune.ready) {
+            monty.chipTune.ready = true;
+            // only call sid_init within the ISR as we know the ISR saves all registers
+            sid_init(monty.chipTune.song);
+        }
+        sid_play();
+        // left and right buttons to switch current tune
+        monty.menu.buttonA.poll();
+        monty.menu.buttonC.poll();
+        if (monty.menu.buttonA.pressed() && monty.chipTune.song != 0) {
+            monty.chipTune.song--;
+            sid_init(monty.chipTune.song);
+            return;
+        }
+        if (monty.menu.buttonC.pressed() && monty.chipTune.song != 18) {
+            monty.chipTune.song++;
+            sid_init(monty.chipTune.song);
+            return;
+        }
+        return;
+    }
 
     monty.synth.frame++;
     monty.synth.updateVoices();
     monty.menu.update();
-
-    //PORTD &=~STATUS_PIN_0;
 }
 
 Monty::Monty() {
@@ -340,10 +363,12 @@ Monty::Monty() {
 }
 
 void Monty::initIsr() {
-    TCNT1 = ISR_COUNTER;
-    TCCR1A = 0x00;
-    TCCR1B = (1<<CS10) | (1<<CS12);  // timer mode with 1024 prescaler
-    TIMSK1 = (1<<TOIE1);   // enable timer1 overflow interrupt
+    TCCR1A = 0;
+    TCCR1B = 0;
+    OCR1A = 1249;  // 16mhz / 256 prescaler / 50 hz - 1
+    TCCR1B |= (1 << WGM12);
+    TCCR1B |= (1 << CS12);
+    TIMSK1 |= (1 << OCIE1A);
 }
 
 void Monty::enableDom() {
@@ -357,8 +382,15 @@ void Monty::enableGimp() {
 }
 
 void Monty::run() {
+    // hold middle button on start to play Monty On The Run
+    // then left and right buttons to switch the current song
+    monty.menu.buttonB.poll();
+    chipTune.active = monty.menu.buttonB.down;
+
     for (;;) {
-        this->synth.injectMidi();
+        if (!monty.chipTune.active) {
+            this->synth.injectMidi();
+        }
     }
 }
 

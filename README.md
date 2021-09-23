@@ -1,4 +1,4 @@
-# monty
+# Monty
 
 ### Commodore 64 Stereo 6581 SID Synth
 
@@ -22,16 +22,28 @@ https://www.youtube.com/watch?v=tqf2bS5UaQM
 
 ![Monty](http://kamome.slipperyseal.net/monty-pcb1.jpg "Monty")
 
-Monty playing the Monty On The Run chip tune by Rob Hubbard.
-These chip tunes are 6502 processor code and binary data which actaully ran on the Commodore 64. But rather than try to sqeaze a 6502 emulator on the AVR, I cross assembled the play routine and data. I mapped 65 of the 6502s 151 instructions to AVR assembler, intercepted write the SID chip at $d4xx and handled one peice of self modifiying code. I got stuck for a while getting it to run properly, but then finally discovered for at least one instruction, the 6502s carry flag is set inversely to how it’s done on the AVR. Fun times.
+Monty now has a chip tune built in!
+
+SID chip tunes are 6502 processor code and binary data which actually ran on the Commodore 64.
+But rather than try to squeeze a 6502 emulator on the AVR, I cross assembled the play routine and data.
+I mapped 65 of the 6502s 151 instructions to AVR assembler, intercepted write the SID chip at $d4xx and handled one
+peice of self modifiying code. I got stuck for a while getting it to run properly, but then finally discovered for at
+least one instruction, the 6502s carry flag is set inversely to how it’s done on the AVR. Fun times.
+
+Monty playing `Monty On The Run` by Rob Hubbard.
 
 [![Monty](https://img.youtube.com/vi/i0d1r9NZg9I/0.jpg)](https://www.youtube.com/watch?v=i0d1r9NZg9I)
 
 https://www.youtube.com/watch?v=i0d1r9NZg9I
 
+### Building
+
+You'll need `AVR-GCC` and `avrdude` (or your preferred AVR programmer)  
+
 #### Fuse settings
 
-These only needs to be done once. Sets the AVR to use a 16mhz external crystal, and very importantly disable JTAG as we need those pins..
+These only needs to be done once per AVR. This sets the AVR to use a 16mhz external crystal,
+and very importantly disables JTAG as we need those pins..
 
   `avrdude -p m1284p -c YOURPROGAMMER -U lfuse:w:0xff:m -U hfuse:w:0xd9:m`
 
@@ -43,7 +55,7 @@ These only needs to be done once. Sets the AVR to use a 16mhz external crystal, 
 
   `avrdude -p m1284p -c YOURPROGAMMER -U flash:w:monty.hex`
 
-## A breif history
+## A brief history
 
 About a million years ago there was a personal computer called the Commodore 64. One of its revolutionary features for the time was a sound chip that was capable of more than simple beeps common in computers of the time.  The 6581 SID chip was a three voice analog synth with a range of selectable waveforms, multi mode filter and attack, decay, sustain and release envelopes normally only found in professional synthesisers. The unique sound of this chip has prompted the creation of highly accurate emulators, but if you are like me, you’ll agree nothing beats the real thing.  So at the turn of the century I was able to collect a bunch of SID chips from discarded Commodore 64s. Over the years I prototyped various versions of a SID based MIDI synthesizer. A device which receives MIDI commands and translates those the required register writes to a SID chip. 
 

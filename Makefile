@@ -48,7 +48,8 @@ build:
 	$(CC) -c $(CFLAGS) led.cpp -o led.o
 	$(CC) -c $(CFLAGS) tables.cpp -o tables.o
 	$(CC) -c $(CFLAGS) devices.cpp -o devices.o
-	$(CC) $(CFLAGS) $(TARGET).o led.o tables.o max.o devices.o --output $(TARGET).elf
+	$(CC) -c $(CFLAGS) motr.avr.s -o motr.avr.o
+	$(CC) $(CFLAGS) $(TARGET).o led.o tables.o max.o devices.o motr.avr.o --output $(TARGET).elf
 	$(OBJCOPY) -O ihex -j .text -j .data $(TARGET).elf $(TARGET).hex
 
 program:
