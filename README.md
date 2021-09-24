@@ -57,13 +57,28 @@ and very importantly disables JTAG as we need those pins..
 
 ## A brief history
 
-About a million years ago there was a personal computer called the Commodore 64. One of its revolutionary features for the time was a sound chip that was capable of more than simple beeps common in computers of the time.  The 6581 SID chip was a three voice analog synth with a range of selectable waveforms, multi mode filter and attack, decay, sustain and release envelopes normally only found in professional synthesisers. The unique sound of this chip has prompted the creation of highly accurate emulators, but if you are like me, you’ll agree nothing beats the real thing.  So at the turn of the century I was able to collect a bunch of SID chips from discarded Commodore 64s. Over the years I prototyped various versions of a SID based MIDI synthesizer. A device which receives MIDI commands and translates those the required register writes to a SID chip. 
+About a million years ago there was a personal computer called the Commodore 64. One of its revolutionary features for
+the time was a sound chip that was capable of more than simple beeps common in computers of the time.
+The 6581 SID chip was a three voice analog synth with a range of selectable waveforms, multi mode filter and attack,
+decay, sustain and release envelopes normally only found in professional synthesisers. The unique sound of this chip
+has prompted the creation of highly accurate emulators, but if you are like me, you’ll agree nothing beats the real thing.
+So at the turn of the century I was able to collect a bunch of SID chips from discarded Commodore 64s.
+Over the years I prototyped various versions of a SID based MIDI synthesizer. A device which receives MIDI commands
+and translates those the required register writes to a SID chip. 
 
-My first prototype was C code compiled on a PC. Of course a PC doesn’t have a SID chip, so I relayed data to an actual Commodore 64 using the PCs parallel port and an old joystick cable. A few lines of assembler code on the 64 reassembled two nibbles sent on the up, down, left and right lines while the fire button line was used as a timing clock. This let me run a Commodore 64 emulator and a chip tune player that could drive a real SID.
+My first prototype was C code compiled on a PC. Of course a PC doesn’t have a SID chip, so I relayed data to an
+actual Commodore 64 using the PCs parallel port and an old joystick cable. A few lines of assembler code on the 64
+reassembled two nibbles sent on the up, down, left and right lines while the fire button line was used as a timing clock.
+This let me run a Commodore 64 emulator and a chip tune player that could drive a real SID.
 
-I breadboarded a few microcontroller based solutions over the years, killing several SID chips in the process. More recently a good friend of mine helped me gain EDA skills to fulfill this dream using a proper printed circuit board. So while we were at it, we used two SID chips, for hard core 6 voice stereo. Now this hasn’t been an especially uncommon thing to do. There are various projects around ranging from simple hacks to commercial products which do the same thing. But this one is mine. I named it Monty, after the best game (with the best game music) ever created, Monty On The Run.
+I breadboarded a few microcontroller based solutions over the years, killing several SID chips in the process. More
+recently a good friend of mine helped me gain EDA skills to fulfill this dream using a proper printed circuit board.
+So while we were at it, we used two SID chips, for hard core 6 voice stereo. Now this hasn’t been an especially uncommon
+thing to do. There are various projects around ranging from simple hacks to commercial products which do the same thing.
+But this one is mine. I named it Monty, after the best game (with the best game music) ever created, Monty On The Run.
 
-A demo of the previous Raspberry Pi powered version. This is receiving SID register data from a C64 emulator via TCP/IP. This version is still in the commit history...
+A demo of the previous Raspberry Pi powered version. This is receiving SID register data from a C64 emulator via TCP/IP.
+This version is still in the commit history...
 
 [![Monty](https://img.youtube.com/vi/0jyIRRmpcOg/0.jpg)](https://www.youtube.com/watch?v=0jyIRRmpcOg)
 
@@ -71,12 +86,56 @@ https://www.youtube.com/watch?v=0jyIRRmpcOg
 
 ## How it works
 
-An optocoupler receives and buffers the MIDI serial signal.  The MCU running the whole show is an Atmel AVR. I’ve had this working on 28 pin variants but I decided to go for the full 40 pin experience of the ATMega1284P. This helped simplify the IO and allowed me to add a 7 segment LED display and some keyswitches. So how do we control the SID chip itself? It’s pretty simple, luckily. The AVR and the SID use a standard 5 volt VCC. The original 6581 also requires a 12 volt rail while the newer 8580 chips wants 9 volts. The synth is powered by a 12 volt PSU and I’ve added a 5 and 9 volt regulator. The SID runs on a 1mhz clock. The audio oscillators in the chip are derived from this clock, so it’s important it’s exactly 1mhz. I run the AVR at 16mhz and program one of the GPIOs to emit a 1mhz square wave. Simples. The chip has an 8 bit data bus, a 5 bit address bus, a read/write mode pin and a chip select. Writes to the chip don’t need to be synced exactly to the 1mhz clock. As long as you write to the bus at least as long as one SID clock cycle, it’s happy. The code on the AVR sets up the address and data bus values on its GPIO, sets the chip select, waits with a few AVR No Op instructions, then clears the chip select. Of course both SIDs can sit on the same bus and will respond to their respective chip select pins.
+An optocoupler receives and buffers the MIDI serial signal.  The MCU running the whole show is an Atmel AVR.
+I’ve had this working on 28 pin variants but I decided to go for the full 40 pin experience of the ATMega1284P.
+This helped simplify the IO and allowed me to add a 7 segment LED display and some key switches.
+So how do we control the SID chip itself? It’s pretty simple, luckily. The AVR and the SID use a standard 5 volt VCC.
+The original 6581 also requires a 12 volt rail while the newer 8580 chips wants 9 volts. The synth is powered by a 12
+volt PSU and I’ve added a 5 and 9 volt regulator. The SID runs on a 1mhz clock. The audio oscillators in the chip are
+derived from this clock, so it’s important it’s exactly 1mhz. I run the AVR at 16mhz and program one of the GPIOs
+to emit a 1mhz square wave. Simples. The chip has an 8 bit data bus, a 5 bit address bus, a read/write mode pin and a
+chip select. Writes to the chip don’t need to be synced exactly to the 1mhz clock. As long as you write to the bus at
+least as long as one SID clock cycle, it’s happy. The code on the AVR sets up the address and data bus values on its GPIO,
+sets the chip select, waits with a few AVR No Op instructions, then clears the chip select. Of course both SIDs can
+sit on the same bus and will respond to their respective chip select pins.
 
 ## The software
 
-The main program loop listens for incoming MIDI commands from a UART. Voice objects represent the state of each of the three voices in each SID.  When a “Note On” MIDI command is received, the Voice objects are searched for one which is free. Should the tune have more polyphony (simultaneous notes playing) than voices, the oldest note playing is taken over. Values from the instrument object are set up on the SID voice via the appropriate registers and a note trigger bit is set. “Note Off” commands in turn mark the voice as available and trigger the voice to stop. Note that the SID chip has a proper attack, decay, sustain and release envelope which is all managed by the chip. No need to do anything fancy to make that work. Voice allocation is done round-robin which allows the voice’s envelope to ring out as long as possible. A common trick with game music on the Commodore 64 was to change certain values in the SID as notes were playing. Arpeggios were common (changing the notes of a single voice rapidly), pitch bends, even changing the waveform type itself. These effects are handled by an interrupt which fires 32 times a second (this is configurable).
+The main program loop listens for incoming MIDI commands from a UART. Voice objects represent the state of each of
+the three voices in each SID.  When a “Note On” MIDI command is received, the Voice objects are searched for one which is
+free. Should the tune have more polyphony (simultaneous notes playing) than voices, the oldest note playing is taken over.
+Values from the instrument object are set up on the SID voice via the appropriate registers and a note trigger bit is set.
+“Note Off” commands in turn mark the voice as available and trigger the voice to stop. Note that the SID chip has a proper
+attack, decay, sustain and release envelope which is all managed by the chip. No need to do anything fancy to make that work.
+Voice allocation is done round-robin which allows the voice’s envelope to ring out as long as possible.
+A common trick with game music on the Commodore 64 was to change certain values in the SID as notes were playing.
+Arpeggios were common (changing the notes of a single voice rapidly), pitch bends, even changing the waveform type itself.
+These effects are handled by an interrupt which fires 50 times per second.
 
 ##### Gerber files for this PCB are included..
 
 ![Monty](http://kamome.slipperyseal.net/monty-pcb.png "Monty PCB")
+
+## Notes about components and construction
+
+- The 7805 regulator is always required. The 7809, and its capacitor, are only required if you are going to use at least one 8580.
+- You can mix 6581 and 8580 on the same board. Ensure the jumpers are set correctly for each.
+Above the SIDs are 3 pin headers. Place a two pin jumper as per your SID or SIDs. Smoke may come out if they are wrong.
+- Warning: left and right SIDs are "RIGHT and LEFT" on the board. This was to align with the rear view of the RCA sockets
+(although they also should have probably been the other way around also).
+- If you only have one SID put it in the socket marked LEFT and change TOTAL_SIDS to 1 in the source.
+- The 7 Segment LED display needs to be common cathode (common ground).
+- 7 seg LEDRx and LED_RES resistors should be chosen as appropriate your components. For Blue LEDs perhaps 470 ohm. For red, maybe 220 ohm.
+- CapA and CapB for each SID are the filter capacitors and should also be chosen as per the SID type you are using.
+- MIDI IN is a 5 pin din socket.
+- The header in the bottom right is for the second UART. This can be used for chaining Montys or for any other reason you can think of having another UART.
+- Depending on your programmer, it may cause some LED segments to go dark while connected. This is normal.
+- Key switches are not mandatory to get it running.
+- Use IC sockets everywhere!
+- I would recommend, start by assembling the 7805 power section, the bottom section with the MCU, and the 7 seg. Test
+this before putting a SID anywhere near it. 😄
+- I have had reports that the drill holes for the power socket are not quite right. I have never open sourced a PCB before,
+please bear with me.
+- If there is no switch on your power socket I would suggest unplugging the PSU from the mains before inserting or removing
+the plug, to reduce scratchy power spikes. Obviously double check the polarity of the power going to the socket.
+Use a PSU which supplies a stable 12 Volts. Anything 500 milliamps or above should be fine.
