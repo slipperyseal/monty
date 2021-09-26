@@ -118,7 +118,7 @@ These effects are handled by an interrupt which fires 50 times per second.
 
 ## Notes about components and construction
 
-- The 7805 regulator is always required. The 7809, and its capacitor, are only required if you are going to use at least one 8580.
+- The 7809 (and its capacitor) are only required if you are going to use at least one 8580.
 - You can mix 6581 and 8580 on the same board. Ensure the jumpers are set correctly for each.
 Above the SIDs are 3 pin headers. Place a two pin jumper as per your SID or SIDs. Smoke may come out if they are wrong.
 - Warning: left and right SIDs are "RIGHT and LEFT" on the board. This was to align with the rear view of the RCA sockets
@@ -139,3 +139,12 @@ please bear with me.
 - If there is no switch on your power socket I would suggest unplugging the PSU from the mains before inserting or removing
 the plug, to reduce scratchy power spikes. Obviously double check the polarity of the power going to the socket.
 Use a PSU which supplies a stable 12 Volts. Anything 500 milliamps or above should be fine.
+
+Also..
+
+- I have updated the PCB and I'm waiting on delivery. Once tested I'll update the files here.
+This adds support for both common anode and cathode 7 segment LEDs. I have also made the drill holes for the
+power socket a little bigger.
+- I have had reports that the Gerber files of the current version have issues regarding the power socket:
+The slots in the KO layer differ from the drill layer. I'm not sure how to explain this as in EasyEDA, you define
+the hole and these layers should be based on that? ¯\\\_(ツ)\_/¯
