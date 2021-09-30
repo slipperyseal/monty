@@ -27,7 +27,11 @@ Monty now has a chip tune built in!
 SID chip tunes are 6502 processor code and binary data which actually ran on the Commodore 64.
 But rather than try to squeeze a 6502 emulator on the AVR, I cross assembled the play routine and data.
 I mapped 65 of the 6502s 151 instructions to AVR assembler, intercepted write the SID chip at $d4xx and handled one
-peice of self modifiying code.  Hold the center button on boot to start playing the tune.
+piece of self modifiying code.  Hold the center button on boot to start playing the tune.
+
+Jetpack 6502 to AVR cross assembler:
+
+https://github.com/slipperyseal/jetpack
 
 Monty playing `Monty On The Run` by Rob Hubbard.
 
