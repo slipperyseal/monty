@@ -85,11 +85,12 @@ sid_write:
 ;    code block $8506 - $8565
 ;    code block $9554 - $9582
 ;    code block $9591 - $95b5
+;    data size $1122
 
-          ; transcode 8000 - 8002
+          ; transcode $8000 - $8002
 L8000:    rjmp L95a0                    ; JMP $95a0
 
-          ; transcode 8012 - 807f
+          ; transcode $8012 - $807f
 L8012:    ldi  r16, 0x0f                ; LDA #$0f
           tst r16
           mov r20, r16                  ; STA $d418 (SID)
@@ -186,7 +187,6 @@ L805f:    ldi r26,lo8(ram+0x00c0)       ; LDA $84c0,X
           sts ram+0x00c3, r16           ; STA $84c3
           mov r18, r16                  ; TAY
           lds r16, ram+0x00eb           ; LDA $84eb
-          tst r16
           lds r20, ram+0x00ec           ; CMP $84ec
           cp r16, r20
           brne 1f                       ; BNE $8083
@@ -222,7 +222,7 @@ L805f:    ldi r26,lo8(ram+0x00c0)       ; LDA $84c0,X
           brmi L8086                    ; BMI $8086
           rjmp L8174                    ; JMP $8174
 
-          ; transcode 8083 - 80a6
+          ; transcode $8083 - $80a6
 L8083:    rjmp L819b                    ; JMP $819b
 L8086:    ldi r26,lo8(ram+0x00c4)       ; LDY $84c4,X
           ldi r27,hi8(ram+0x00c4)
@@ -242,7 +242,6 @@ L8086:    ldi r26,lo8(ram+0x00c4)       ; LDY $84c4,X
           adc r27,r19
           out 0x3f, r22
           ld r16, X
-          tst r16
           cpi  r16, 0xff                ; CMP #$ff
           in r22, 0x3f
           eor r22, r23
@@ -284,7 +283,7 @@ L8099:    ldi  r16, 0x00                ; LDA #$00
           st X, r16
           rjmp L8086                    ; JMP $8086
 
-          ; transcode 80aa - 83ff
+          ; transcode $80aa - $83ff
 L80aa:    mov r18, r16                  ; TAY
           ldi r26,lo8(ram+0x017e)       ; LDA $857e,Y
           ldi r27,hi8(ram+0x017e)
@@ -629,7 +628,6 @@ L8154:    lds r17, ram+0x00dc           ; LDX $84dc
           adc r27,r19
           out 0x3f, r22
           ld r16, X
-          tst r16
           cpi  r16, 0xff                ; CMP #$ff
           in r22, 0x3f
           eor r22, r23
@@ -1386,7 +1384,6 @@ L8392:    lds r20, ram+0x00ff           ; DEC $84ff
           andi r16, 0x0f                ; AND #$0f
           sts ram+0x00ff, r16           ; STA $84ff
           lds r16, ram+0x00fe           ; LDA $84fe
-          tst r16
           lds r20, ram+0x0100           ; CMP $8500
           cp r16, r20
           brne L83b6                    ; BNE $83b6
@@ -1504,7 +1501,7 @@ L83f0:    brvc L83fd                    ; BVC $83fd
           sts ram+0x0104, r16           ; STA $8504
 L83fd:    rjmp L838c                    ; JMP $838c
 
-          ; transcode 8506 - 8565
+          ; transcode $8506 - $8565
 L8506:    ldi  r16, 0x00                ; LDA #$00
           tst r16
           mov r20, r16                  ; STA $d404 (SID)
@@ -1603,7 +1600,6 @@ L8549:    ldi r26,lo8(ram+0x1055)       ; LDA $9455,Y
           lds r16, ram+0x0105           ; LDA $8505
           andi r16, 0x30                ; AND #$30
           ldi  r18, 0xee                ; LDY #$ee
-          tst r18
           cpi  r16, 0x20                ; CMP #$20
           in r22, 0x3f
           eor r22, r23
@@ -1614,7 +1610,7 @@ L8549:    ldi r26,lo8(ram+0x1055)       ; LDA $9455,Y
 L8562:    sts zero+0x00, r18            ; STY $83b6 (SELF MODIFYING)
           ret                           ; RTS
 
-          ; transcode 9554 - 9582
+          ; transcode $9554 - $9582
 L9554:    ldi  r18, 0x00                ; LDY #$00
           lsl r16                       ; ASL
           sts ram+0x00dc, r16           ; STA $84dc
@@ -1665,7 +1661,7 @@ L957d:    ldi  r16, 0xc0                ; LDA #$c0
           sts ram+0x00ee, r16           ; STA $84ee
           ret                           ; RTS
 
-          ; transcode 9591 - 95b5
+          ; transcode $9591 - $95b5
 L9591:    lds r17, ram+0x00fb           ; LDX $84fb
           tst r17
           breq L959a                    ; BEQ $959a

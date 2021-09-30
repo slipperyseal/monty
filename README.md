@@ -27,8 +27,7 @@ Monty now has a chip tune built in!
 SID chip tunes are 6502 processor code and binary data which actually ran on the Commodore 64.
 But rather than try to squeeze a 6502 emulator on the AVR, I cross assembled the play routine and data.
 I mapped 65 of the 6502s 151 instructions to AVR assembler, intercepted write the SID chip at $d4xx and handled one
-peice of self modifiying code. I got stuck for a while getting it to run properly, but then finally discovered for at
-least one instruction, the 6502s carry flag is set inversely to how it’s done on the AVR. Fun times.
+peice of self modifiying code.  Hold the center button on boot to start playing the tune.
 
 Monty playing `Monty On The Run` by Rob Hubbard.
 
@@ -111,6 +110,30 @@ Voice allocation is done round-robin which allows the voice’s envelope to ring
 A common trick with game music on the Commodore 64 was to change certain values in the SID as notes were playing.
 Arpeggios were common (changing the notes of a single voice rapidly), pitch bends, even changing the waveform type itself.
 These effects are handled by an interrupt which fires 50 times per second.
+
+## What do the buttons do?
+
+There is a simple memu system for editing voice properties (values in the range 0 to F).
+
+```
+Knob knobs[] = {
+    {'A', &monty.synth.instrument.attackDecay, true },
+    {'D', &monty.synth.instrument.attackDecay, false },
+    {'S', &monty.synth.instrument.sustainRelease, true },
+    {'R', &monty.synth.instrument.sustainRelease, false },
+    {'H', &monty.synth.instrument.sineAmplitude, false },
+    {'W', &monty.synth.instrument.sineWidth, false },
+};
+```
+
+- Press center button: Letter flashes (The Knob).
+- Move left and right through letters.
+- Press center again to edit the value.
+- Edit with left and right: 0 to F
+- Center to return to letters.
+- After a timeout Knob mode clears. 
+
+Also, hold the centre button on boot to start playing the Monty On The Run chip tune.
 
 ##### Gerber files for this PCB are included..
 
