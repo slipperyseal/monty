@@ -24,7 +24,6 @@ sid_init:
     clr r17
     clr r18
     clr r19
-    ldi r23, 0x01
     rjmp L95a0
 
 .global sid_play
@@ -34,7 +33,6 @@ sid_play:
     clr r17
     clr r18
     clr r19
-    ldi r23, 0x01
     rjmp L8012
 
 sid_write:
@@ -239,14 +237,8 @@ L8086:    ldi r26,lo8(ram+0x00c4)       ; LDY $84c4,X
           out 0x3f, r22
           ld r16, X
           cpi  r16, 0xff                ; CMP #$ff
-          in r22, 0x3f
-          eor r22, r23
-          out 0x3f, r22
           breq L8099                    ; BEQ $8099
           cpi  r16, 0xfe                ; CMP #$fe
-          in r22, 0x3f
-          eor r22, r23
-          out 0x3f, r22
           brne 1f                       ; BNE $80aa
           sbrc r19, 0
 1:        rjmp L80aa
@@ -625,9 +617,6 @@ L8154:    lds r17, ram+0x00dc           ; LDX $84dc
           out 0x3f, r22
           ld r16, X
           cpi  r16, 0xff                ; CMP #$ff
-          in r22, 0x3f
-          eor r22, r23
-          out 0x3f, r22
           brne 1f                       ; BNE $8367
           sbrc r19, 0
 1:        rjmp L8367
@@ -753,10 +742,7 @@ L81a3:    ldi r26,lo8(ram+0x00d6)       ; LDA $84d6,X
           lds r16, ram+0x00fa           ; LDA $84fa
           andi r16, 0x07                ; AND #$07
           cpi  r16, 0x04                ; CMP #$04
-          in r22, 0x3f
-          eor r22, r23
-          out 0x3f, r22
-          brcc L81cc                    ; BCC $81cc
+          brcs L81cc                    ; BCC $81cc
           ldi r20, 0x07                 ; EOR #$07
           eor r16, r20
 L81cc:    sts ram+0x00e4, r16           ; STA $84e4
@@ -838,10 +824,7 @@ L81e4:    lsr r16                       ; LSR
           ld r16, X
           andi r16, 0x1f                ; AND #$1f
           cpi  r16, 0x08                ; CMP #$08
-          in r22, 0x3f
-          eor r22, r23
-          out 0x3f, r22
-          brcc 1f                       ; BCC $8221
+          brcs 1f                       ; BCC $8221
           sbrc r19, 0
 1:        rjmp L8221
           lds r18, ram+0x00e4           ; LDY $84e4
@@ -941,9 +924,6 @@ L8230:    lds r16, ram+0x00df           ; LDA $84df
           andi r16, 0x0f                ; AND #$0f
           push r16                      ; PHA
           cpi  r16, 0x0e                ; CMP #$0e
-          in r22, 0x3f
-          eor r22, r23
-          out 0x3f, r22
           brne 1f                       ; BNE $8280
           sbrc r19, 0
 1:        rjmp L8280
@@ -979,9 +959,6 @@ L8269:    sec                           ; SEC
           andi r16, 0x0f                ; AND #$0f
           push r16                      ; PHA
           cpi  r16, 0x08                ; CMP #$08
-          in r22, 0x3f
-          eor r22, r23
-          out 0x3f, r22
           brne L8280                    ; BNE $8280
           ldi r26,lo8(ram+0x00e8)       ; DEC $84e8,X
           ldi r27,hi8(ram+0x00e8)
@@ -1187,12 +1164,9 @@ L82de:    lds r16, ram+0x00f8           ; LDA $84f8
           out 0x3f, r22
           ld r20, X
           cp r16, r20
-          in r22, 0x3f
-          eor r22, r23
-          out 0x3f, r22
           lds r18, ram+0x00c3           ; LDY $84c3
           tst r18
-          brcc L830f                    ; BCC $830f
+          brcs L830f                    ; BCC $830f
           ldi r26,lo8(ram+0x00ef)       ; LDA $84ef,X
           ldi r27,hi8(ram+0x00ef)
           in r22, 0x3f
@@ -1593,17 +1567,11 @@ L8549:    ldi r26,lo8(ram+0x1055)       ; LDA $9455,Y
           inc r18                       ; INY
           inc r17                       ; INX
           cpi  r17, 0x0e                ; CPX #$0e
-          in r22, 0x3f
-          eor r22, r23
-          out 0x3f, r22
           brne L8549                    ; BNE $8549
           lds r16, ram+0x0105           ; LDA $8505
           andi r16, 0x30                ; AND #$30
           ldi  r18, 0xee                ; LDY #$ee
           cpi  r16, 0x20                ; CMP #$20
-          in r22, 0x3f
-          eor r22, r23
-          out 0x3f, r22
           breq L8562                    ; BEQ $8562
           ldi  r18, 0xce                ; LDY #$ce
           tst r18
@@ -1637,9 +1605,6 @@ L9560:    ldi r26,lo8(ram+0x016c)       ; LDA $856c,X
           inc r17                       ; INX
           inc r18                       ; INY
           cpi  r18, 0x06                ; CPY #$06
-          in r22, 0x3f
-          eor r22, r23
-          out 0x3f, r22
           brne L9560                    ; BNE $9560
           ldi  r16, 0x00                ; LDA #$00
           tst r16
@@ -1672,10 +1637,7 @@ L959a:    ori  r16, 0x40                ; ORA #$40
           ret                           ; RTS
 L95a0:    sts ram+0x11bf, r16           ; STA $95bf
           cpi  r16, 0x03                ; CMP #$03
-          in r22, 0x3f
-          eor r22, r23
-          out 0x3f, r22
-          brcs L95aa                    ; BCS $95aa
+          brcc L95aa                    ; BCS $95aa
           rjmp L9554                    ; JMP $9554
 L95aa:    sec                           ; SEC
           sbci r16, 0x03                ; SBC #$03
