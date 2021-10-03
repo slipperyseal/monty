@@ -25,7 +25,7 @@ sid_init:
     clr r18
     clr r19
     ldi r23, 0x01
-    rjmp L8000
+    rjmp L95a0
 
 .global sid_play
     .type sid_play, @function
@@ -78,17 +78,12 @@ sid_write:
     nop
     ret
 
-;    code block $8000 - $8002
 ;    code block $8012 - $807f
-;    code block $8083 - $80a6
+;    code block $8086 - $80a6
 ;    code block $80aa - $83ff
 ;    code block $8506 - $8565
 ;    code block $9554 - $9582
 ;    code block $9591 - $95b5
-;    data size $1122
-
-          ; transcode $8000 - $8002
-L8000:    rjmp L95a0                    ; JMP $95a0
 
           ; transcode $8012 - $807f
 L8012:    ldi  r16, 0x0f                ; LDA #$0f
@@ -151,7 +146,9 @@ L8028:    ldi r26,lo8(ram+0x00c4)       ; STA $84c4,X
           brpl L8028                    ; BPL $8028
           sts ram+0x00ee, r16           ; STA $84ee
           rjmp L8052                    ; JMP $8052
-L803d:    brvc L804f                    ; BVC $804f
+L803d:    brvc 1f                       ; BVC $837d
+          sbrc r19, 0
+1:        rjmp L837d
           ldi  r16, 0x00                ; LDA #$00
           tst r16
           mov r20, r16                  ; STA $d404 (SID)
@@ -166,7 +163,7 @@ L803d:    brvc L804f                    ; BVC $804f
           ldi  r16, 0x80                ; LDA #$80
           tst r16
           sts ram+0x00ee, r16           ; STA $84ee
-L804f:    rjmp L837d                    ; JMP $837d
+          rjmp L837d                    ; JMP $837d
 L8052:    ldi  r17, 0x02                ; LDX #$02
           tst r17
           lds r20, ram+0x00eb           ; DEC $84eb
@@ -189,9 +186,9 @@ L805f:    ldi r26,lo8(ram+0x00c0)       ; LDA $84c0,X
           lds r16, ram+0x00eb           ; LDA $84eb
           lds r20, ram+0x00ec           ; CMP $84ec
           cp r16, r20
-          brne 1f                       ; BNE $8083
+          brne 1f                       ; BNE $819b
           sbrc r19, 0
-1:        rjmp L8083
+1:        rjmp L819b
           ldi r26,lo8(ram+0x0166)       ; LDA $8566,X
           ldi r27,hi8(ram+0x0166)
           in r22, 0x3f
@@ -222,8 +219,7 @@ L805f:    ldi r26,lo8(ram+0x00c0)       ; LDA $84c0,X
           brmi L8086                    ; BMI $8086
           rjmp L8174                    ; JMP $8174
 
-          ; transcode $8083 - $80a6
-L8083:    rjmp L819b                    ; JMP $819b
+          ; transcode $8086 - $80a6
 L8086:    ldi r26,lo8(ram+0x00c4)       ; LDY $84c4,X
           ldi r27,hi8(ram+0x00c4)
           in r22, 0x3f
@@ -632,7 +628,9 @@ L8154:    lds r17, ram+0x00dc           ; LDX $84dc
           in r22, 0x3f
           eor r22, r23
           out 0x3f, r22
-          brne L8171                    ; BNE $8171
+          brne 1f                       ; BNE $8367
+          sbrc r19, 0
+1:        rjmp L8367
           ldi  r16, 0x00                ; LDA #$00
           tst r16
           ldi r26,lo8(ram+0x00c7)       ; STA $84c7,X
@@ -651,7 +649,7 @@ L8154:    lds r17, ram+0x00dc           ; LDX $84dc
           ld r20, X
           inc r20
           st X, r20
-L8171:    rjmp L8367                    ; JMP $8367
+          rjmp L8367                    ; JMP $8367
 L8174:    lds r16, ram+0x00fd           ; LDA $84fd
           tst r16
           brmi L817c                    ; BMI $817c
@@ -1490,7 +1488,9 @@ L83e0:    lds r20, ram+0x0102           ; BIT $8502
           ldi r21, 0x04
           rcall sid_write
           sts ram+0x0103, r16           ; STA $8503
-L83f0:    brvc L83fd                    ; BVC $83fd
+L83f0:    brvc 1f                       ; BVC $838c
+          sbrc r19, 0
+1:        rjmp L838c
           lds r16, ram+0x0104           ; LDA $8504
           tst r16
           ldi r20, 0x01                 ; EOR #$01
@@ -1499,7 +1499,7 @@ L83f0:    brvc L83fd                    ; BVC $83fd
           ldi r21, 0x0b
           rcall sid_write
           sts ram+0x0104, r16           ; STA $8504
-L83fd:    rjmp L838c                    ; JMP $838c
+          rjmp L838c                    ; JMP $838c
 
           ; transcode $8506 - $8565
 L8506:    ldi  r16, 0x00                ; LDA #$00
@@ -1889,14 +1889,12 @@ ram:
     .ascii "\215\277\225\311\003\260\003\114\124\225\070\351\003\110\040\175\225\150\040\221\225\140\000\000"
     .ascii "\000\000\000\000\000\000\000\000"
 
-
 .global __do_copy_data
 .global __do_clear_bss
 
 ;        6502 opcodes translated: 62 of 151
-;        instructions translated: 485
-; Thank you for your cooperation
-
+;        instructions translated: 483
+;        Thank you for your cooperation.
 
     .end
 
