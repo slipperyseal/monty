@@ -139,9 +139,11 @@ Knob knobs[] = {
 
 Also, hold the centre button on boot to start playing the Monty On The Run chip tune.
 
-##### Gerber files for this PCB are included..
+## Project files for the PCB
 
 ![Monty](http://kamome.slipperyseal.net/monty-pcb.png "Monty PCB")
+
+https://easyeda.com/slipperyseal/monty
 
 ## Notes about components and construction
 
@@ -166,12 +168,8 @@ please bear with me.
 - If there is no switch on your power socket I would suggest unplugging the PSU from the mains before inserting or removing
 the plug, to reduce scratchy power spikes. Obviously double check the polarity of the power going to the socket.
 Use a PSU which supplies a stable 12 Volts. Anything 500 milliamps or above should be fine.
-
-Also..
-
-- I have updated the PCB and I'm waiting on delivery. Once tested I'll update the files here.
-This adds support for both common anode and cathode 7 segment LEDs. I have also made the drill holes for the
-power socket a little bigger.
-- I have had reports that the Gerber files of the current version have issues regarding the power socket:
+- Support for both common anode and cathode 7 segment LEDs (add a jumper wire as appropriate under the 7 seg).
+- I have  made the drill holes for the power socket a little bigger in the EasyEDA project.
+I have had reports that the Gerber files of the current version have issues regarding the power socket:
 The slots in the KO layer differ from the drill layer. I'm not sure how to explain this as in EasyEDA, you define
 the hole and these layers should be based on that? ¯\\\_(ツ)\_/¯
