@@ -153,7 +153,7 @@ Above the SIDs are 3 pin headers. Place a two pin jumper as per your SID or SIDs
 - Warning: left and right SIDs are "RIGHT and LEFT" on the board. This was to align with the rear view of the RCA sockets
 (although they also should have probably been the other way around also).
 - If you only have one SID put it in the socket marked LEFT and change TOTAL_SIDS to 1 in the source.
-- The 7 Segment LED display needs to be common cathode (common ground).
+- In the first version of the board the 7 Segment LED display needed to be common cathode (common ground). The next version includes a jumper you can wire in to select common anode or cathode. Remove the comment on `LED_INVERT` in `monty.h` to invert the bits when using common anode.
 - 7 seg LEDRx and LED_RES resistors should be chosen as appropriate your components. For Blue LEDs perhaps 470 ohm. For red, maybe 220 ohm.
 - CapA and CapB for each SID are the filter capacitors and should also be chosen as per the SID type you are using.
 - MIDI IN is a 5 pin din socket.
@@ -172,4 +172,4 @@ Use a PSU which supplies a stable 12 Volts. Anything 500 milliamps or above shou
 - I have  made the drill holes for the power socket a little bigger in the EasyEDA project.
 I have had reports that the Gerber files of the current version have issues regarding the power socket:
 The slots in the KO layer differ from the drill layer. I'm not sure how to explain this as in EasyEDA, you define
-the hole and these layers should be based on that? ¯\\\_(ツ)\_/¯
+the hole and these layers should be based on that? `¯\\\_(ツ)\_/¯`
