@@ -157,7 +157,7 @@ Above the SIDs are 3 pin headers. Place a two pin jumper as per your SID or SIDs
 - Warning: left and right SIDs are "RIGHT and LEFT" on the board. This was to align with the rear view of the RCA sockets
 (although they also should have probably been the other way around also).
 - If you only have one SID put it in the socket marked LEFT and change TOTAL_SIDS to 1 in the source.
-- In the first version of the board the 7 Segment LED display needed to be common cathode (common ground). The next version includes a jumper you can wire in to select common anode or cathode. Remove the comment on `LED_INVERT` in `monty.h` to invert the bits when using common anode.
+- In the first version of the board the 7 Segment LED display needed to be common cathode (common ground). The last version of the PCB includes a jumper you can wire in to select common anode or cathode. Use the build option mentioned above to invert the bits when using common anode.
 - 7 seg LEDRx and LED_RES resistors should be chosen as appropriate your components. For Blue LEDs perhaps 470 ohm. For red, maybe 220 ohm.
 - CapA and CapB for each SID are the filter capacitors and should also be chosen as per the SID type you are using.
 - MIDI IN is a 5 pin din socket.
