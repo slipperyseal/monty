@@ -55,9 +55,6 @@
 #define SID_CS_CLEAR   (SID_CS_LEFT | SID_CS_RIGHT) // both high
 #define SID_RW_READ    (1<<5) // read/write line is connected to GPIO even though we only ever write
 
-// PORTB
-//#define LED_INVERT   // common cathode 7 seg displays will need the bits inverted
- 
 // PORT D
 #define SID_RESET      (1<<1)
 #define STATUS_PIN_0   (1<<2) // status pins when UART1 disabled

@@ -21,9 +21,7 @@ Uart0::Uart0() {
 }
 
 uint8_t Uart0::read() {
-    //PORTD &=~STATUS_PIN_1;
     while ((UCSR0A & (1 << RXC0)) == 0);
-    //PORTD |= STATUS_PIN_1; // set a GPIO so we can see the time not blocked on UART, on an oscilloscope
 
     uint8_t value = UDR0;
     if (monty.dom) {
@@ -99,7 +97,7 @@ uint8_t SevenSeg::scrollUp2(uint8_t value) {
 }
 
 void SevenSeg::update(uint8_t value) {
-#ifdef LED_INVERT
+#ifdef LED_ANODE
     PORTB = ~value;
 #else
     PORTB = value;

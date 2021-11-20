@@ -54,6 +54,10 @@ and very importantly disables JTAG as we need those pins..
 
   `make`
 
+If your 7 segment display is common anode:
+
+  `make led=ANODE`
+
 #### AVR Programming
 
   `avrdude -p m1284p -c YOURPROGAMMER -U flash:w:monty.hex`

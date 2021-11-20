@@ -47,7 +47,7 @@ build:
 	$(CC) -c $(CFLAGS) max.cpp -o max.o
 	$(CC) -c $(CFLAGS) led.cpp -o led.o
 	$(CC) -c $(CFLAGS) tables.cpp -o tables.o
-	$(CC) -c $(CFLAGS) devices.cpp -o devices.o
+	$(CC) -c $(CFLAGS) -DLED_$(led) devices.cpp -o devices.o
 	$(CC) -c $(CFLAGS) motr.avr.s -o motr.avr.o
 	$(CC) $(CFLAGS) $(TARGET).o led.o tables.o max.o devices.o motr.avr.o --output $(TARGET).elf
 	$(OBJCOPY) -O ihex -j .text -j .data $(TARGET).elf $(TARGET).hex
