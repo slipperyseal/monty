@@ -48,11 +48,12 @@ void Uart1::write(uint8_t data) {
 }
 
 SidClock::SidClock() {
-    // SID 1mhz clock OSC 2
+    // SID 1mhz clock OSC 2 on PD7
     TCNT2 = 0;
     OCR2A = 7;
     TCCR2A = (1<<COM2A0) + (1<<WGM21);
     TCCR2B = (1<<CS20);
+    DDRD |= (1<<7);
 }
 
 SevenSeg::SevenSeg() {

@@ -34,7 +34,7 @@ Knob knobs[] = {
 Synth::Synth() {
     DDRA = 0xFF;
     DDRC = 0xFF;
-    DDRD = ~(1<<3)  ;//|= SID_RESET; todo: fix why this didnt work
+    DDRD |= SID_RESET;
 
     this->initSids();
 

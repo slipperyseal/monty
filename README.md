@@ -20,7 +20,7 @@ Two Monty's each responding to alternate MIDI channels...
 
 https://www.youtube.com/watch?v=tqf2bS5UaQM
 
-![Monty](http://kamome.slipperyseal.net/monty-pcb1.jpg "Monty")
+![Monty](https://storage.googleapis.com/kyoto.catchpole.net/monty-pcb1.jpg "Monty")
 
 Monty now has a chip tune built in!
 
@@ -145,7 +145,7 @@ Also, hold the centre button on boot to start playing the Monty On The Run chip 
 
 ## Project files for the PCB
 
-![Monty](http://kamome.slipperyseal.net/monty-pcb.png "Monty PCB")
+![Monty](https://storage.googleapis.com/kyoto.catchpole.net/monty-pcb.png "Monty PCB")
 
 https://easyeda.com/slipperyseal/monty
 
