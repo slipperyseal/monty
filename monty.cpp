@@ -15,6 +15,8 @@ extern const uint8_t sin_table[] PROGMEM;
 extern const uint8_t max[7416] PROGMEM;
 
 // motr.avr.s
+extern const uint16_t songcount;
+extern const uint16_t songstart;
 extern "C" {
     extern void sid_init(uint8_t song);
     extern void sid_play();
@@ -341,7 +343,7 @@ ISR(TIMER1_COMPA_vect) {
             sid_init(monty.chipTune.song);
             return;
         }
-        if (monty.menu.buttonC.pressed() && monty.chipTune.song != 18) {
+        if (monty.menu.buttonC.pressed() && monty.chipTune.song != songcount) {
             monty.chipTune.song++;
             sid_init(monty.chipTune.song);
             return;
@@ -355,6 +357,8 @@ ISR(TIMER1_COMPA_vect) {
 }
 
 Monty::Monty() {
+    this->chipTune.song = songstart-1;
+
     this->menu.knobs = knobs;
     this->menu.knobCount = (sizeof(knobs)/sizeof(Knob));
 

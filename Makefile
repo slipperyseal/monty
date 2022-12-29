@@ -56,6 +56,6 @@ program:
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH) -U flash:w:$(TARGET).hex
 
 clean:
-	$(REMOVE) "$(TARGET).hex"
-	$(REMOVE) "$(TARGET).elf"
-	$(REMOVE) "$(TARGET).o"
+	$(REMOVE) $(TARGET).hex
+	$(REMOVE) $(TARGET).elf
+	$(REMOVE) $(TARGET).o led.o tables.o max.o devices.o motr.avr.o
