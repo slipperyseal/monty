@@ -98,7 +98,6 @@ L803d:  brvc 1f                       ; BVC $837d
         sts ram+0x00ee, r16           ; STA $84ee
         rjmp L837d                    ; JMP $837d
 L8052:  ldi  r17, 0x02                ; LDX #$02
-        tst r17
         lds r20, ram+0x00eb           ; DEC $84eb
         dec r20
         sts ram+0x00eb, r20
@@ -378,7 +377,6 @@ L80ed:  inc r18                       ; INY
         adc r27,r19
         out 0x3f, r22
         ld r16, X
-        tst r16
         lds r18, ram+0x00c3           ; LDY $84c3
         tst r18
         mov r20, r16                  ; STA $d401,Y (SID)
@@ -761,7 +759,6 @@ L81e4:  lsr r16                       ; LSR
         sbrc r19, 0
 1:      rjmp L8221
         lds r18, ram+0x00e4           ; LDY $84e4
-        tst r18
 L8208:  dec r18                       ; DEY
         brmi 1f                       ; BMI $8221
         sbrc r19, 0
@@ -904,7 +901,6 @@ L8269:  sec                           ; SEC
         st X, r20
 L8280:  sts ram+0x00dc, r17           ; STX $84dc
         lds r17, ram+0x00c3           ; LDX $84c3
-        tst r17
         pop r16                       ; PLA
         tst r16
         ldi r26,lo8(ram+0x0fb5)       ; STA $93b5,Y
@@ -936,7 +932,6 @@ L8280:  sts ram+0x00dc, r17           ; STX $84dc
         out 0x3f, r22
         rcall sid_write
         lds r17, ram+0x00dc           ; LDX $84dc
-        tst r17
 L8297:  lds r18, ram+0x00c3           ; LDY $84c3
         ldi r26,lo8(ram+0x00f5)       ; LDA $84f5,X
         ldi r27,hi8(ram+0x00f5)
@@ -1107,7 +1102,6 @@ L82de:  lds r16, ram+0x00f8           ; LDA $84f8
         adc r27,r19
         out 0x3f, r22
         ld r16, X
-        tst r16
         ldi r26,lo8(ram+0x00ef)       ; DEC $84ef,X
         ldi r27,hi8(ram+0x00ef)
         in r22, 0x3f
@@ -1233,7 +1227,6 @@ L8350:  lsl r16                       ; ASL
         adc r27,r19
         out 0x3f, r22
         ld r16, X
-        tst r16
         lds r18, ram+0x00c3           ; LDY $84c3
         tst r18
         mov r20, r16                  ; STA $d401,Y (SID)
@@ -1313,7 +1306,6 @@ L83b6:  lds r20, ram+0x00fe           ; DEC $84fe (SELF MODIFYING)
         sts ram+0x00fe, r20
         lsl r16                       ; ASL
         mov r18, r16                  ; TAY
-        tst r18
         lds r20, ram+0x0105           ; BIT $8505
         mov r21, r20
         and r21, r16
@@ -1388,7 +1380,6 @@ L83e0:  lds r20, ram+0x0102           ; BIT $8502
         sev
         brpl L83f0                    ; BPL $83f0
         lds r16, ram+0x0103           ; LDA $8503
-        tst r16
         ldi r20, 0x01                 ; EOR #$01
         eor r16, r20
         mov r20, r16                  ; STA $d404 (SID)
@@ -1399,7 +1390,6 @@ L83f0:  brvc 1f                       ; BVC $838c
         sbrc r19, 0
 1:      rjmp L838c
         lds r16, ram+0x0104           ; LDA $8504
-        tst r16
         ldi r20, 0x01                 ; EOR #$01
         eor r16, r20
         mov r20, r16                  ; STA $d40b (SID)

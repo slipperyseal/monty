@@ -333,6 +333,7 @@ ISR(TIMER1_COMPA_vect) {
             monty.chipTune.ready = true;
             // only call sid_init within the ISR as we know the ISR saves all registers
             sid_init(monty.chipTune.song);
+            return; // start playing on next interrupt
         }
         sid_play();
         // left and right buttons to switch current tune
