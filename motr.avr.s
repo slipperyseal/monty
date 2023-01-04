@@ -161,10 +161,8 @@ L8086:  ldi r26,lo8(ram+0x00c4)       ; LDY $84c4,X
         lds r26,zero+0x02             ; LDA ($02),Y
         lds r27,zero+0x02+1
         in r22, 0x3f
-        subi r26,lo8(0x8400)
-        sbci r27,hi8(0x8400)
-        subi r26,lo8(-(ram))
-        sbci r27,hi8(-(ram))
+        subi r26,lo8(-(ram-0x8400))
+        sbci r27,hi8(-(ram-0x8400))
         add r26,r18
         adc r27,r19
         out 0x3f, r22
@@ -245,10 +243,8 @@ L80aa:  mov r18, r16                  ; TAY
         lds r26,zero+0x04             ; LDA ($04),Y
         lds r27,zero+0x04+1
         in r22, 0x3f
-        subi r26,lo8(0x8400)
-        sbci r27,hi8(0x8400)
-        subi r26,lo8(-(ram))
-        sbci r27,hi8(-(ram))
+        subi r26,lo8(-(ram-0x8400))
+        sbci r27,hi8(-(ram-0x8400))
         add r26,r18
         adc r27,r19
         out 0x3f, r22
@@ -300,10 +296,8 @@ L80aa:  mov r18, r16                  ; TAY
         lds r26,zero+0x04             ; LDA ($04),Y
         lds r27,zero+0x04+1
         in r22, 0x3f
-        subi r26,lo8(0x8400)
-        sbci r27,hi8(0x8400)
-        subi r26,lo8(-(ram))
-        sbci r27,hi8(-(ram))
+        subi r26,lo8(-(ram-0x8400))
+        sbci r27,hi8(-(ram-0x8400))
         add r26,r18
         adc r27,r19
         out 0x3f, r22
@@ -338,10 +332,8 @@ L80ed:  inc r18                       ; INY
         lds r26,zero+0x04             ; LDA ($04),Y
         lds r27,zero+0x04+1
         in r22, 0x3f
-        subi r26,lo8(0x8400)
-        sbci r27,hi8(0x8400)
-        subi r26,lo8(-(ram))
-        sbci r27,hi8(-(ram))
+        subi r26,lo8(-(ram-0x8400))
+        sbci r27,hi8(-(ram-0x8400))
         add r26,r18
         adc r27,r19
         out 0x3f, r22
@@ -539,10 +531,8 @@ L8154:  lds r17, ram+0x00dc           ; LDX $84dc
         lds r26,zero+0x04             ; LDA ($04),Y
         lds r27,zero+0x04+1
         in r22, 0x3f
-        subi r26,lo8(0x8400)
-        sbci r27,hi8(0x8400)
-        subi r26,lo8(-(ram))
-        sbci r27,hi8(-(ram))
+        subi r26,lo8(-(ram-0x8400))
+        sbci r27,hi8(-(ram-0x8400))
         add r26,r18
         adc r27,r19
         out 0x3f, r22
