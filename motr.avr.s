@@ -23,7 +23,7 @@ L8012:  ldi  r16, 0x0f                ; LDA #$0f
         tst r16
         mov r20, r16                  ; STA $d418 (SID)
         ldi r21, 0x18
-        rcall sid_write
+        call sid_write
         lds r20, ram+0x00fa           ; INC $84fa
         inc r20
         sts ram+0x00fa, r20
@@ -38,10 +38,10 @@ L8012:  ldi  r16, 0x0f                ; LDA #$0f
         sev
         brmi 1f                       ; BMI $803d
         sbrc r19, 0
-1:      rjmp L803d
+1:      jmp L803d
         brvc 1f                       ; BVC $8052
         sbrc r19, 0
-1:      rjmp L8052
+1:      jmp L8052
         ldi  r16, 0x00                ; LDA #$00
         tst r16
         sts ram+0x00fa, r16           ; STA $84fa
@@ -78,25 +78,25 @@ L8028:  ldi r26,lo8(ram+0x00c4)       ; STA $84c4,X
         dec r17                       ; DEX
         brpl L8028                    ; BPL $8028
         sts ram+0x00ee, r16           ; STA $84ee
-        rjmp L8052                    ; JMP $8052
+        jmp L8052                     ; JMP $8052
 L803d:  brvc 1f                       ; BVC $837d
         sbrc r19, 0
-1:      rjmp L837d
+1:      jmp L837d
         ldi  r16, 0x00                ; LDA #$00
         tst r16
         mov r20, r16                  ; STA $d404 (SID)
         ldi r21, 0x04
-        rcall sid_write
+        call sid_write
         mov r20, r16                  ; STA $d40b (SID)
         ldi r21, 0x0b
-        rcall sid_write
+        call sid_write
         mov r20, r16                  ; STA $d412 (SID)
         ldi r21, 0x12
-        rcall sid_write
+        call sid_write
         ldi  r16, 0x80                ; LDA #$80
         tst r16
         sts ram+0x00ee, r16           ; STA $84ee
-        rjmp L837d                    ; JMP $837d
+        jmp L837d                     ; JMP $837d
 L8052:  ldi  r17, 0x02                ; LDX #$02
         lds r20, ram+0x00eb           ; DEC $84eb
         dec r20
@@ -120,7 +120,7 @@ L805f:  ldi r26,lo8(ram+0x00c0)       ; LDA $84c0,X
         cp r16, r20
         brne 1f                       ; BNE $819b
         sbrc r19, 0
-1:      rjmp L819b
+1:      jmp L819b
         ldi r26,lo8(ram+0x0166)       ; LDA $8566,X
         ldi r27,hi8(ram+0x0166)
         in r22, 0x3f
@@ -149,7 +149,7 @@ L805f:  ldi r26,lo8(ram+0x00c0)       ; LDA $84c0,X
         dec r20
         st X, r20
         brmi L8086                    ; BMI $8086
-        rjmp L8174                    ; JMP $8174
+        jmp L8174                     ; JMP $8174
 
 L8086:  ldi r26,lo8(ram+0x00c4)       ; LDY $84c4,X
         ldi r27,hi8(ram+0x00c4)
@@ -172,11 +172,11 @@ L8086:  ldi r26,lo8(ram+0x00c4)       ; LDY $84c4,X
         cpi  r16, 0xfe                ; CMP #$fe
         brne 1f                       ; BNE $80aa
         sbrc r19, 0
-1:      rjmp L80aa
+1:      jmp L80aa
                                       ; NOP
                                       ; NOP
                                       ; NOP
-        rjmp L837d                    ; JMP $837d
+        jmp L837d                     ; JMP $837d
 L8099:  ldi  r16, 0x00                ; LDA #$00
         tst r16
         ldi r26,lo8(ram+0x00ca)       ; STA $84ca,X
@@ -200,7 +200,7 @@ L8099:  ldi  r16, 0x00                ; LDA #$00
         adc r27,r19
         out 0x3f, r22
         st X, r16
-        rjmp L8086                    ; JMP $8086
+        jmp L8086                     ; JMP $8086
 
 L80aa:  mov r18, r16                  ; TAY
         ldi r26,lo8(ram+0x017e)       ; LDA $857e,Y
@@ -277,7 +277,7 @@ L80aa:  mov r18, r16                  ; TAY
         sev
         brvs 1f                       ; BVS $8118
         sbrc r19, 0
-1:      rjmp L8118
+1:      jmp L8118
         ldi r26,lo8(ram+0x00c7)       ; INC $84c7,X
         ldi r27,hi8(ram+0x00c7)
         in r22, 0x3f
@@ -291,7 +291,7 @@ L80aa:  mov r18, r16                  ; TAY
         tst r16
         brpl 1f                       ; BPL $80ed
         sbrc r19, 0
-1:      rjmp L80ed
+1:      jmp L80ed
         inc r18                       ; INY
         lds r26,zero+0x04             ; LDA ($04),Y
         lds r27,zero+0x04+1
@@ -311,7 +311,7 @@ L80aa:  mov r18, r16                  ; TAY
         adc r27,r19
         out 0x3f, r22
         st X, r16
-        rjmp L80ea                    ; JMP $80ea
+        jmp L80ea                     ; JMP $80ea
 L80e7:  ldi r26,lo8(ram+0x00d6)       ; STA $84d6,X
         ldi r27,hi8(ram+0x00d6)
         in r22, 0x3f
@@ -352,7 +352,7 @@ L80ed:  inc r18                       ; INY
         tst r16
         brpl 1f                       ; BPL $811b
         sbrc r19, 0
-1:      rjmp L811b
+1:      jmp L811b
         ldi r26,lo8(ram+0x0000)       ; LDA $8400,Y
         ldi r27,hi8(ram+0x0000)
         in r22, 0x3f
@@ -376,7 +376,7 @@ L80ed:  inc r18                       ; INY
         in r22, 0x3f
         add r21, r18
         out 0x3f, r22
-        rcall sid_write
+        call sid_write
         ldi r26,lo8(ram+0x00ef)       ; STA $84ef,X
         ldi r27,hi8(ram+0x00ef)
         in r22, 0x3f
@@ -391,7 +391,7 @@ L80ed:  inc r18                       ; INY
         in r22, 0x3f
         add r21, r18
         out 0x3f, r22
-        rcall sid_write
+        call sid_write
         ldi r26,lo8(ram+0x00f2)       ; STA $84f2,X
         ldi r27,hi8(ram+0x00f2)
         in r22, 0x3f
@@ -399,7 +399,7 @@ L80ed:  inc r18                       ; INY
         adc r27,r19
         out 0x3f, r22
         st X, r16
-        rjmp L811b                    ; JMP $811b
+        jmp L811b                     ; JMP $811b
 L8118:  lds r20, ram+0x00d9           ; DEC $84d9
         dec r20
         sts ram+0x00d9, r20
@@ -430,7 +430,7 @@ L811b:  lds r18, ram+0x00c3           ; LDY $84c3
         tst r16
         brpl 1f                       ; BPL $8154
         sbrc r19, 0
-1:      rjmp L8154
+1:      jmp L8154
         ldi r26,lo8(ram+0x0fb6)       ; LDA $93b6,X
         ldi r27,hi8(ram+0x0fb6)
         in r22, 0x3f
@@ -445,7 +445,7 @@ L811b:  lds r18, ram+0x00c3           ; LDY $84c3
         in r22, 0x3f
         add r21, r18
         out 0x3f, r22
-        rcall sid_write
+        call sid_write
         ldi r26,lo8(ram+0x0fb4)       ; LDA $93b4,X
         ldi r27,hi8(ram+0x0fb4)
         in r22, 0x3f
@@ -459,7 +459,7 @@ L811b:  lds r18, ram+0x00c3           ; LDY $84c3
         in r22, 0x3f
         add r21, r18
         out 0x3f, r22
-        rcall sid_write
+        call sid_write
         ldi r26,lo8(ram+0x0fb5)       ; LDA $93b5,X
         ldi r27,hi8(ram+0x0fb5)
         in r22, 0x3f
@@ -473,7 +473,7 @@ L811b:  lds r18, ram+0x00c3           ; LDY $84c3
         in r22, 0x3f
         add r21, r18
         out 0x3f, r22
-        rcall sid_write
+        call sid_write
         ldi r26,lo8(ram+0x0fb7)       ; LDA $93b7,X
         ldi r27,hi8(ram+0x0fb7)
         in r22, 0x3f
@@ -487,7 +487,7 @@ L811b:  lds r18, ram+0x00c3           ; LDY $84c3
         in r22, 0x3f
         add r21, r18
         out 0x3f, r22
-        rcall sid_write
+        call sid_write
         ldi r26,lo8(ram+0x0fb8)       ; LDA $93b8,X
         ldi r27,hi8(ram+0x0fb8)
         in r22, 0x3f
@@ -501,7 +501,7 @@ L811b:  lds r18, ram+0x00c3           ; LDY $84c3
         in r22, 0x3f
         add r21, r18
         out 0x3f, r22
-        rcall sid_write
+        call sid_write
 L8154:  lds r17, ram+0x00dc           ; LDX $84dc
         lds r16, ram+0x00dd           ; LDA $84dd
         tst r16
@@ -540,7 +540,7 @@ L8154:  lds r17, ram+0x00dc           ; LDX $84dc
         cpi  r16, 0xff                ; CMP #$ff
         brne 1f                       ; BNE $8367
         sbrc r19, 0
-1:      rjmp L8367
+1:      jmp L8367
         ldi  r16, 0x00                ; LDA #$00
         tst r16
         ldi r26,lo8(ram+0x00c7)       ; STA $84c7,X
@@ -559,11 +559,11 @@ L8154:  lds r17, ram+0x00dc           ; LDX $84dc
         ld r20, X
         inc r20
         st X, r20
-        rjmp L8367                    ; JMP $8367
+        jmp L8367                     ; JMP $8367
 L8174:  lds r16, ram+0x00fd           ; LDA $84fd
         tst r16
         brmi L817c                    ; BMI $817c
-        rjmp L8367                    ; JMP $8367
+        jmp L8367                     ; JMP $8367
 L817c:  lds r18, ram+0x00c3           ; LDY $84c3
         ldi r26,lo8(ram+0x00cd)       ; LDA $84cd,X
         ldi r27,hi8(ram+0x00cd)
@@ -575,7 +575,7 @@ L817c:  lds r18, ram+0x00c3           ; LDY $84c3
         andi r16, 0x20                ; AND #$20
         brne 1f                       ; BNE $819b
         sbrc r19, 0
-1:      rjmp L819b
+1:      jmp L819b
         ldi r26,lo8(ram+0x00ca)       ; LDA $84ca,X
         ldi r27,hi8(ram+0x00ca)
         in r22, 0x3f
@@ -598,7 +598,7 @@ L817c:  lds r18, ram+0x00c3           ; LDY $84c3
         in r22, 0x3f
         add r21, r18
         out 0x3f, r22
-        rcall sid_write
+        call sid_write
         ldi  r16, 0x00                ; LDA #$00
         tst r16
         mov r20, r16                  ; STA $d405,Y (SID)
@@ -606,17 +606,17 @@ L817c:  lds r18, ram+0x00c3           ; LDY $84c3
         in r22, 0x3f
         add r21, r18
         out 0x3f, r22
-        rcall sid_write
+        call sid_write
         mov r20, r16                  ; STA $d406,Y (SID)
         ldi r21, 0x06
         in r22, 0x3f
         add r21, r18
         out 0x3f, r22
-        rcall sid_write
+        call sid_write
 L819b:  lds r16, ram+0x00fd           ; LDA $84fd
         tst r16
         brmi L81a3                    ; BMI $81a3
-        rjmp L8367                    ; JMP $8367
+        jmp L8367                     ; JMP $8367
 L81a3:  ldi r26,lo8(ram+0x00d6)       ; LDA $84d6,X
         ldi r27,hi8(ram+0x00d6)
         in r22, 0x3f
@@ -659,7 +659,7 @@ L81a3:  ldi r26,lo8(ram+0x00d6)       ; LDA $84d6,X
         sts ram+0x00de, r16           ; STA $84de
         breq 1f                       ; BEQ $8230
         sbrc r19, 0
-1:      rjmp L8230
+1:      jmp L8230
         lds r16, ram+0x00fa           ; LDA $84fa
         andi r16, 0x07                ; AND #$07
         cpi  r16, 0x04                ; CMP #$04
@@ -747,12 +747,12 @@ L81e4:  lsr r16                       ; LSR
         cpi  r16, 0x08                ; CMP #$08
         brcs 1f                       ; BCC $8221
         sbrc r19, 0
-1:      rjmp L8221
+1:      jmp L8221
         lds r18, ram+0x00e4           ; LDY $84e4
 L8208:  dec r18                       ; DEY
         brmi 1f                       ; BMI $8221
         sbrc r19, 0
-1:      rjmp L8221
+1:      jmp L8221
         clc                           ; CLC
         lds r16, ram+0x00e2           ; LDA $84e2
         lds r20, ram+0x00e0           ; ADC $84e0
@@ -762,7 +762,7 @@ L8208:  dec r18                       ; DEY
         lds r20, ram+0x00e1           ; ADC $84e1
         adc r16, r20
         sts ram+0x00e3, r16           ; STA $84e3
-        rjmp L8208                    ; JMP $8208
+        jmp L8208                     ; JMP $8208
 L8221:  lds r18, ram+0x00c3           ; LDY $84c3
         lds r16, ram+0x00e2           ; LDA $84e2
         tst r16
@@ -771,7 +771,7 @@ L8221:  lds r18, ram+0x00c3           ; LDY $84c3
         in r22, 0x3f
         add r21, r18
         out 0x3f, r22
-        rcall sid_write
+        call sid_write
         lds r16, ram+0x00e3           ; LDA $84e3
         tst r16
         mov r20, r16                  ; STA $d401,Y (SID)
@@ -779,12 +779,12 @@ L8221:  lds r18, ram+0x00c3           ; LDY $84c3
         in r22, 0x3f
         add r21, r18
         out 0x3f, r22
-        rcall sid_write
+        call sid_write
 L8230:  lds r16, ram+0x00df           ; LDA $84df
         tst r16
         breq 1f                       ; BEQ $8297
         sbrc r19, 0
-1:      rjmp L8297
+1:      jmp L8297
         lds r18, ram+0x00ed           ; LDY $84ed
         andi r16, 0x1f                ; AND #$1f
         ldi r26,lo8(ram+0x00e5)       ; DEC $84e5,X
@@ -798,7 +798,7 @@ L8230:  lds r16, ram+0x00df           ; LDA $84df
         st X, r20
         brpl 1f                       ; BPL $8297
         sbrc r19, 0
-1:      rjmp L8297
+1:      jmp L8297
         ldi r26,lo8(ram+0x00e5)       ; STA $84e5,X
         ldi r27,hi8(ram+0x00e5)
         in r22, 0x3f
@@ -819,7 +819,7 @@ L8230:  lds r16, ram+0x00df           ; LDA $84df
         tst r16
         brne 1f                       ; BNE $8269
         sbrc r19, 0
-1:      rjmp L8269
+1:      jmp L8269
         lds r16, ram+0x00f9           ; LDA $84f9
         tst r16
         clc                           ; CLC
@@ -846,7 +846,7 @@ L8230:  lds r16, ram+0x00df           ; LDA $84df
         cpi  r16, 0x0e                ; CMP #$0e
         brne 1f                       ; BNE $8280
         sbrc r19, 0
-1:      rjmp L8280
+1:      jmp L8280
         ldi r26,lo8(ram+0x00e8)       ; INC $84e8,X
         ldi r27,hi8(ram+0x00e8)
         in r22, 0x3f
@@ -856,7 +856,7 @@ L8230:  lds r16, ram+0x00df           ; LDA $84df
         ld r20, X
         inc r20
         st X, r20
-        rjmp L8280                    ; JMP $8280
+        jmp L8280                     ; JMP $8280
 L8269:  sec                           ; SEC
         ldi r26,lo8(ram+0x0fb4)       ; LDA $93b4,Y
         ldi r27,hi8(ram+0x0fb4)
@@ -905,7 +905,7 @@ L8280:  sts ram+0x00dc, r17           ; STX $84dc
         in r22, 0x3f
         add r21, r17
         out 0x3f, r22
-        rcall sid_write
+        call sid_write
         pop r16                       ; PLA
         tst r16
         ldi r26,lo8(ram+0x0fb4)       ; STA $93b4,Y
@@ -920,7 +920,7 @@ L8280:  sts ram+0x00dc, r17           ; STX $84dc
         in r22, 0x3f
         add r21, r17
         out 0x3f, r22
-        rcall sid_write
+        call sid_write
         lds r17, ram+0x00dc           ; LDX $84dc
 L8297:  lds r18, ram+0x00c3           ; LDY $84c3
         ldi r26,lo8(ram+0x00f5)       ; LDA $84f5,X
@@ -933,7 +933,7 @@ L8297:  lds r18, ram+0x00c3           ; LDY $84c3
         tst r16
         breq 1f                       ; BEQ $82de
         sbrc r19, 0
-1:      rjmp L82de
+1:      jmp L82de
         andi r16, 0x7e                ; AND #$7e
         sts ram+0x00dc, r16           ; STA $84dc
         ldi r26,lo8(ram+0x00f5)       ; LDA $84f5,X
@@ -946,7 +946,7 @@ L8297:  lds r18, ram+0x00c3           ; LDY $84c3
         andi r16, 0x01                ; AND #$01
         breq 1f                       ; BEQ $82c6
         sbrc r19, 0
-1:      rjmp L82c6
+1:      jmp L82c6
         sec                           ; SEC
         ldi r26,lo8(ram+0x00f2)       ; LDA $84f2,X
         ldi r27,hi8(ram+0x00f2)
@@ -969,7 +969,7 @@ L8297:  lds r18, ram+0x00c3           ; LDY $84c3
         in r22, 0x3f
         add r21, r18
         out 0x3f, r22
-        rcall sid_write
+        call sid_write
         ldi r26,lo8(ram+0x00ef)       ; LDA $84ef,X
         ldi r27,hi8(ram+0x00ef)
         in r22, 0x3f
@@ -990,8 +990,8 @@ L8297:  lds r18, ram+0x00c3           ; LDY $84c3
         in r22, 0x3f
         add r21, r18
         out 0x3f, r22
-        rcall sid_write
-        rjmp L82de                    ; JMP $82de
+        call sid_write
+        jmp L82de                     ; JMP $82de
 L82c6:  clc                           ; CLC
         ldi r26,lo8(ram+0x00f2)       ; LDA $84f2,X
         ldi r27,hi8(ram+0x00f2)
@@ -1014,7 +1014,7 @@ L82c6:  clc                           ; CLC
         in r22, 0x3f
         add r21, r18
         out 0x3f, r22
-        rcall sid_write
+        call sid_write
         ldi r26,lo8(ram+0x00ef)       ; LDA $84ef,X
         ldi r27,hi8(ram+0x00ef)
         in r22, 0x3f
@@ -1036,12 +1036,12 @@ L82c6:  clc                           ; CLC
         in r22, 0x3f
         add r21, r18
         out 0x3f, r22
-        rcall sid_write
+        call sid_write
 L82de:  lds r16, ram+0x00f8           ; LDA $84f8
         andi r16, 0x01                ; AND #$01
         breq 1f                       ; BEQ $831a
         sbrc r19, 0
-1:      rjmp L831a
+1:      jmp L831a
         ldi r26,lo8(ram+0x00ef)       ; LDA $84ef,X
         ldi r27,hi8(ram+0x00ef)
         in r22, 0x3f
@@ -1052,7 +1052,7 @@ L82de:  lds r16, ram+0x00f8           ; LDA $84f8
         tst r16
         breq 1f                       ; BEQ $831a
         sbrc r19, 0
-1:      rjmp L831a
+1:      jmp L831a
         ldi r26,lo8(ram+0x00ca)       ; LDA $84ca,X
         ldi r27,hi8(ram+0x00ca)
         in r22, 0x3f
@@ -1063,7 +1063,7 @@ L82de:  lds r16, ram+0x00f8           ; LDA $84f8
         tst r16
         breq 1f                       ; BEQ $831a
         sbrc r19, 0
-1:      rjmp L831a
+1:      jmp L831a
         ldi r26,lo8(ram+0x00cd)       ; LDA $84cd,X
         ldi r27,hi8(ram+0x00cd)
         in r22, 0x3f
@@ -1106,7 +1106,7 @@ L82de:  lds r16, ram+0x00f8           ; LDA $84f8
         in r22, 0x3f
         add r21, r18
         out 0x3f, r22
-        rcall sid_write
+        call sid_write
         ldi r26,lo8(ram+0x00d0)       ; LDA $84d0,X
         ldi r27,hi8(ram+0x00d0)
         in r22, 0x3f
@@ -1129,7 +1129,7 @@ L830f:  ldi r26,lo8(ram+0x00ef)       ; LDA $84ef,X
         in r22, 0x3f
         add r21, r18
         out 0x3f, r22
-        rcall sid_write
+        call sid_write
         ldi  r16, 0x80                ; LDA #$80
         tst r16
 L8317:  mov r20, r16                  ; STA $d404,Y (SID)
@@ -1137,12 +1137,12 @@ L8317:  mov r20, r16                  ; STA $d404,Y (SID)
         in r22, 0x3f
         add r21, r18
         out 0x3f, r22
-        rcall sid_write
+        call sid_write
 L831a:  lds r16, ram+0x00f8           ; LDA $84f8
         andi r16, 0x02                ; AND #$02
         breq 1f                       ; BEQ $8336
         sbrc r19, 0
-1:      rjmp L8336
+1:      jmp L8336
         lds r16, ram+0x00fa           ; LDA $84fa
         andi r16, 0x01                ; AND #$01
         breq L8336                    ; BEQ $8336
@@ -1171,12 +1171,12 @@ L831a:  lds r16, ram+0x00f8           ; LDA $84f8
         in r22, 0x3f
         add r21, r18
         out 0x3f, r22
-        rcall sid_write
+        call sid_write
 L8336:  lds r16, ram+0x00f8           ; LDA $84f8
         andi r16, 0x04                ; AND #$04
         breq 1f                       ; BEQ $8367
         sbrc r19, 0
-1:      rjmp L8367
+1:      jmp L8367
         lds r16, ram+0x00fa           ; LDA $84fa
         andi r16, 0x01                ; AND #$01
         breq L834d                    ; BEQ $834d
@@ -1191,7 +1191,7 @@ L8336:  lds r16, ram+0x00f8           ; LDA $84f8
         clc                           ; CLC
         ldi r20, 0x0c                 ; ADC #$0c
         adc r16, r20
-        rjmp L8350                    ; JMP $8350
+        jmp L8350                     ; JMP $8350
 L834d:  ldi r26,lo8(ram+0x00d3)       ; LDA $84d3,X
         ldi r27,hi8(ram+0x00d3)
         in r22, 0x3f
@@ -1224,7 +1224,7 @@ L8350:  lsl r16                       ; ASL
         in r22, 0x3f
         add r21, r18
         out 0x3f, r22
-        rcall sid_write
+        call sid_write
         lds r16, ram+0x00db           ; LDA $84db
         tst r16
         mov r20, r16                  ; STA $d400,Y (SID)
@@ -1232,7 +1232,7 @@ L8350:  lsl r16                       ; ASL
         in r22, 0x3f
         add r21, r18
         out 0x3f, r22
-        rcall sid_write
+        call sid_write
 L8367:  ldi  r18, 0xff                ; LDY #$ff
         lds r16, ram+0x00fb           ; LDA $84fb
         tst r16
@@ -1244,7 +1244,7 @@ L8367:  ldi  r18, 0xff                ; LDY #$ff
 L8374:  sts ram+0x00fd, r18           ; STY $84fd
         dec r17                       ; DEX
         brmi L837d                    ; BMI $837d
-        rjmp L805f                    ; JMP $805f
+        jmp L805f                     ; JMP $805f
 L837d:  ldi  r16, 0xff                ; LDA #$ff
         tst r16
         sts ram+0x00fd, r16           ; STA $84fd
@@ -1263,7 +1263,7 @@ L837d:  ldi  r16, 0xff                ; LDA #$ff
         brpl L838d                    ; BPL $838d
 L838c:  ret                           ; RTS
 L838d:  brvc L8392                    ; BVC $8392
-        rcall L8506                   ; JSR $8506
+        call L8506                    ; JSR $8506
 L8392:  lds r20, ram+0x00ff           ; DEC $84ff
         dec r20
         sts ram+0x00ff, r20
@@ -1279,13 +1279,13 @@ L8392:  lds r20, ram+0x00ff           ; DEC $84ff
         tst r17
         mov r20, r17                  ; STX $d404 (SID)
         ldi r21, 0x04
-        rcall sid_write
+        call sid_write
         mov r20, r17                  ; STX $d40b (SID)
         ldi r21, 0x0b
-        rcall sid_write
+        call sid_write
         dec r17                       ; DEX
         sts ram+0x00fc, r17           ; STX $84fc
-        rjmp L838c                    ; JMP $838c
+        jmp L838c                     ; JMP $838c
 L83b6:  lds r20, ram+0x00fe           ; DEC $84fe (SELF MODIFYING)
         lds r21, zero+0x00
         cpi r21, 0xce
@@ -1307,7 +1307,7 @@ L83b6:  lds r20, ram+0x00fe           ; DEC $84fe (SELF MODIFYING)
         sev
         brmi 1f                       ; BMI $83e0
         sbrc r19, 0
-1:      rjmp L83e0
+1:      jmp L83e0
         brvs L83ce                    ; BVS $83ce
         ldi r26,lo8(ram+0x0000)       ; LDA $8400,Y
         ldi r27,hi8(ram+0x0000)
@@ -1319,7 +1319,7 @@ L83b6:  lds r20, ram+0x00fe           ; DEC $84fe (SELF MODIFYING)
         tst r16
         mov r20, r16                  ; STA $d400 (SID)
         ldi r21, 0x00
-        rcall sid_write
+        call sid_write
         ldi r26,lo8(ram+0x0001)       ; LDA $8401,Y
         ldi r27,hi8(ram+0x0001)
         in r22, 0x3f
@@ -1330,7 +1330,7 @@ L83b6:  lds r20, ram+0x00fe           ; DEC $84fe (SELF MODIFYING)
         tst r16
         mov r20, r16                  ; STA $d401 (SID)
         ldi r21, 0x01
-        rcall sid_write
+        call sid_write
 L83ce:  mov r16, r18                  ; TYA
         tst r16
         sec                           ; SEC
@@ -1347,7 +1347,7 @@ L83ce:  mov r16, r18                  ; TYA
         tst r16
         mov r20, r16                  ; STA $d407 (SID)
         ldi r21, 0x07
-        rcall sid_write
+        call sid_write
         ldi r26,lo8(ram+0x0001)       ; LDA $8401,Y
         ldi r27,hi8(ram+0x0001)
         in r22, 0x3f
@@ -1358,7 +1358,7 @@ L83ce:  mov r16, r18                  ; TYA
         tst r16
         mov r20, r16                  ; STA $d408 (SID)
         ldi r21, 0x08
-        rcall sid_write
+        call sid_write
 L83e0:  lds r20, ram+0x0102           ; BIT $8502
         mov r21, r20
         and r21, r16
@@ -1374,28 +1374,28 @@ L83e0:  lds r20, ram+0x0102           ; BIT $8502
         eor r16, r20
         mov r20, r16                  ; STA $d404 (SID)
         ldi r21, 0x04
-        rcall sid_write
+        call sid_write
         sts ram+0x0103, r16           ; STA $8503
 L83f0:  brvc 1f                       ; BVC $838c
         sbrc r19, 0
-1:      rjmp L838c
+1:      jmp L838c
         lds r16, ram+0x0104           ; LDA $8504
         ldi r20, 0x01                 ; EOR #$01
         eor r16, r20
         mov r20, r16                  ; STA $d40b (SID)
         ldi r21, 0x0b
-        rcall sid_write
+        call sid_write
         sts ram+0x0104, r16           ; STA $8504
-        rjmp L838c                    ; JMP $838c
+        jmp L838c                     ; JMP $838c
 
 L8506:  ldi  r16, 0x00                ; LDA #$00
         tst r16
         mov r20, r16                  ; STA $d404 (SID)
         ldi r21, 0x04
-        rcall sid_write
+        call sid_write
         mov r20, r16                  ; STA $d40b (SID)
         ldi r21, 0x0b
-        rcall sid_write
+        call sid_write
         sts ram+0x00ff, r16           ; STA $84ff
         lds r16, ram+0x00fc           ; LDA $84fc
         andi r16, 0x0f                ; AND #$0f
@@ -1475,7 +1475,7 @@ L8549:  ldi r26,lo8(ram+0x1055)       ; LDA $9455,Y
         in r22, 0x3f
         add r21, r17
         out 0x3f, r22
-        rcall sid_write
+        call sid_write
         inc r18                       ; INY
         inc r17                       ; INX
         cpi  r17, 0x0e                ; CPX #$0e
@@ -1521,13 +1521,13 @@ L9560:  ldi r26,lo8(ram+0x016c)       ; LDA $856c,X
         tst r16
         mov r20, r16                  ; STA $d404 (SID)
         ldi r21, 0x04
-        rcall sid_write
+        call sid_write
         mov r20, r16                  ; STA $d40b (SID)
         ldi r21, 0x0b
-        rcall sid_write
+        call sid_write
         mov r20, r16                  ; STA $d412 (SID)
         ldi r21, 0x12
-        rcall sid_write
+        call sid_write
         ldi  r16, 0x40                ; LDA #$40
         tst r16
         sts ram+0x00ee, r16           ; STA $84ee
@@ -1548,14 +1548,14 @@ L959a:  ori  r16, 0x40                ; ORA #$40
 L95a0:  sts ram+0x11bf, r16           ; STA $95bf
         cpi  r16, 0x03                ; CMP #$03
         brcc L95aa                    ; BCS $95aa
-        rjmp L9554                    ; JMP $9554
+        jmp L9554                     ; JMP $9554
 L95aa:  sec                           ; SEC
         sbci r16, 0x03                ; SBC #$03
         push r16                      ; PHA
-        rcall L957d                   ; JSR $957d
+        call L957d                    ; JSR $957d
         pop r16                       ; PLA
         tst r16
-        rcall L9591                   ; JSR $9591
+        call L9591                    ; JSR $9591
         ret                           ; RTS
 
 .global sid_init
@@ -1565,7 +1565,7 @@ sid_init:
         clr r17
         clr r18
         clr r19
-        rjmp L95a0
+        jmp L95a0
 
 .global sid_play
         .type sid_play, @function
@@ -1574,7 +1574,7 @@ sid_play:
         clr r17
         clr r18
         clr r19
-        rjmp L8012
+        jmp L8012
 
 sid_write:
         out 0x5,r20
