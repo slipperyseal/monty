@@ -20,7 +20,7 @@ Two Monty's each responding to alternate MIDI channels...
 
 https://www.youtube.com/watch?v=tqf2bS5UaQM
 
-![Monty](https://storage.googleapis.com/kyoto.catchpole.net/monty-pcb1.jpg "Monty")
+![Monty](https://github.com/slipperyseal/monty/blob/slippery/doc/monty-pcb1.jpg "Monty")
 
 Monty now has a chip tune built in!
 
@@ -145,7 +145,7 @@ Also, hold the centre button on boot to start playing the Monty On The Run chip 
 
 ## Project files for the PCB
 
-![Monty](https://storage.googleapis.com/kyoto.catchpole.net/monty-pcb.png "Monty PCB")
+![Monty](https://github.com/slipperyseal/monty/blob/slippery/doc/monty-pcb.png "Monty PCB")
 
 https://easyeda.com/slipperyseal/monty
 
@@ -176,4 +176,4 @@ Use a PSU which supplies a stable 12 Volts. Anything 500 milliamps or above shou
 - I have  made the drill holes for the power socket a little bigger in the EasyEDA project.
 I have had reports that the Gerber files of the current version have issues regarding the power socket:
 The slots in the KO layer differ from the drill layer. I'm not sure how to explain this as in EasyEDA, you define
-the hole and these layers should be based on that? `¯\\\_(ツ)\_/¯`
+the hole and these layers should be based on that? `¯\_(ツ)\_/¯`
